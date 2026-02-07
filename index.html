@@ -408,17 +408,51 @@
             document.getElementById('errorCount').textContent = errorCount;
         }
 
+        function getTimingClass(duration) {
+            if (duration > 10000) return 'very-slow';  // >10s
+            if (duration > 3000) return 'slow';         // >3s
+            return '';                                  // <3s
+        }
+
         function getApiUrl() {
             return document.getElementById('apiUrl').value.replace(/\/$/, '');
         }
 
+        // function showLoading(elementId) {
+        //     document.getElementById(elementId).innerHTML = '<div class="loading"></div> Loading...';
+        // }
+
         function showLoading(elementId) {
-            document.getElementById(elementId).innerHTML = '<div class="loading"></div> Loading...';
+            const element = document.getElementById(elementId);
+            element.innerHTML = '<div class="loading"></div> Loading...';
+            element.className = 'response-area';
         }
 
-        function showResponse(elementId, data, isError = false) {
+        // function showResponse(elementId, data, isError = false) {
+        //     const element = document.getElementById(elementId);
+        //     element.textContent = JSON.stringify(data, null, 2);
+        //     element.className = isError ? 'response-area response-error' : 'response-area response-success';
+        // }
+
+        
+
+        function showResponse(elementId, data, isError = false, duration = null) {
             const element = document.getElementById(elementId);
-            element.textContent = JSON.stringify(data, null, 2);
+            
+            let content = '';
+            
+            // Add timing header if duration provided
+            if (duration !== null) {
+                const timingClass = getTimingClass(duration);
+                content += `<div class="response-header">`;
+                content += `<span>Response:</span>`;
+                content += `<span class="timing-badge ${timingClass}">⏱️ ${Math.round(duration)}ms</span>`;
+                content += `</div>`;
+            }
+            
+            content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            
+            element.innerHTML = content;
             element.className = isError ? 'response-area response-error' : 'response-area response-success';
         }
 
@@ -444,6 +478,9 @@
             totalRequests++;
             updateStats();
 
+            const startTime = performance.now();
+
+
             try {
                 const response = await fetch(`${getApiUrl()}/api/v1/chat/poi`, {
                     method: 'POST',
@@ -463,6 +500,10 @@
                 });
 
                 const data = await response.json();
+
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+
                 if (response.ok) {
                     successCount++;
                     showResponse('poi_chat_response', data);
@@ -488,8 +529,10 @@
                     showResponse('poi_chat_response', data, true);
                 }
             } catch (error) {
+                const endTime = performance.now();
+                const duration = endTime - startTime;
                 errorCount++;
-                showResponse('poi_chat_response', { error: error.message }, true);
+                showResponse('poi_chat_response', { error: error.message }, true, duration);
             }
             updateStats();
         }
@@ -500,6 +543,8 @@
             totalRequests++;
             updateStats();
 
+            const startTime = performance.now();
+
             try {
                 const response = await fetch(`${getApiUrl()}/api/v1/health`, {
                     method: 'GET',
@@ -509,16 +554,21 @@
                 });
 
                 const data = await response.json();
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+
                 if (response.ok) {
                     successCount++;
-                    showResponse('health_response', data);
+                    showResponse('health_response', data, false, duration);
                 } else {
                     errorCount++;
-                    showResponse('health_response', data, true);
+                    showResponse('health_response', data, true, duration);
                 }
             } catch (error) {
                 errorCount++;
-                showResponse('health_response', { error: error.message }, true);
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+                showResponse('health_response', { error: error.message }, true, duration);
             }
             updateStats();
         }

@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Reality Layer - Debug Dashboard</title>
+
+    <!-- https://docs.mapbox.com/mapbox-gl-js/guides/ -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.17.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.17.0/mapbox-gl.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* #map { position: absolute; top: 0; bottom: 0; width: 80%; } */
+        /* #map { */
+            /* height: 80%; */
+            /* width: 600px; */
+            /* height: 600px; */
+        /* } */
+        #map {
+            width: 320px;
+            height: 640px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .config-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .config-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-section h3::before {
+            content: "⚙️";
+            font-size: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .card-icon {
+            font-size: 28px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-small {
+            width: calc(50% - 5px);
+            display: inline-block;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .response-area {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            min-height: 120px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .response-success {
+            border-color: #4caf50;
+            background: #f1f8f4;
+        }
+
+        .response-error {
+            border-color: #f44336;
+            background: #fef1f0;
+            color: #c62828;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .badge-get {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-post {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .audio-player {
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .quick-fill {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            display: inline-block;
+            margin: 5px 5px 5px 0;
+            transition: background 0.2s;
+        }
+
+        .quick-fill:hover {
+            background: #bbdefb;
+        }
+
+
+        .audio-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f4ff;
+            border-radius: 8px;
+            border: 2px dashed #667eea;
+        }
+
+        .audio-section h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .streaming-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .streaming-toggle input[type="checkbox"] {
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎧 Audio Reality Layer - Debug Dashboard</h1>
+            <p>Test and debug your AI-powered audio guide backend in real-time</p>
+        </div>
+
+        <!-- Configuration -->
+        <div class="config-section">
+            <h3>Backend Configuration</h3>
+            <div class="form-group">
+                <label>Backend API URL</label>
+                <input type="text" id="apiUrl" value="http://localhost:8000" placeholder="http://localhost:8000">
+            </div>
+            <div class="form-group">
+                <label>API Key (Optional)</label>
+                <input type="text" id="apiKey" placeholder="your-api-key-here">
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-value" id="totalRequests">0</div>
+                <div class="stat-label">Total Requests</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="successCount">0</div>
+                <div class="stat-label">Successful</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="errorCount">0</div>
+                <div class="stat-label">Errors</div>
+            </div>
+        </div>
+
+        <div id="map">
+            <div class="map-legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#667eea;"></div>
+                    <span>Your Location</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#4caf50;"></div>
+                    <span>Trigger Zone (15m)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#ff9800;"></div>
+                    <span>Detection Zone (80m)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#f44336;"></div>
+                    <span>POIs</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Endpoints -->
+        <div class="grid">
+            <!-- 1. Location Update -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">📍</span>
+                    <div>
+                        <div class="card-title">Update Location</div>
+                        <span class="badge badge-post">POST</span>
+                    </div>
+                </div>
+                
+                <div class="quick-fill" onclick="fillPrague()">📌 Prague</div>
+                <div class="quick-fill" onclick="fillNewYork()">📌 New York</div>
+                <div class="quick-fill" onclick="fillTokyo()">📌 Tokyo</div>
+
+                <div class="form-group">
+                    <label>User ID</label>
+                    <input type="text" id="loc_userId" value="test_user_123">
+                </div>
+
+                <div class="form-group">
+                    <label>User Name</label>
+                    <input type="text" id="loc_userName" value="Alex">
+                </div>
+
+                <div class="form-group">
+                    <label>Age</label>
+                    <input type="number" id="loc_age" value="28">
+                </div>
+
+                <div class="form-group">
+                    <label>Worldview</label>
+                    <select id="loc_worldview">
+                        <option value="progressive">Progressive</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="conservative">Conservative</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Interests (comma-separated)</label>
+                    <input type="text" id="loc_interests" value="history, architecture">
+                </div>
+
+                <div class="form-group">
+                    <label>Vibe</label>
+                    <select id="loc_vibe">
+                        <option value="energetic">Energetic</option>
+                        <option value="relaxed">Relaxed</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-group">
+                        <input type="number" step="0.0001" id="loc_lat" placeholder="Latitude" value="50.0875">
+                        <input type="number" step="0.0001" id="loc_lon" placeholder="Longitude" value="14.4213">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-group">
+                        <input type="number" step="0.1" id="loc_speed" placeholder="Speed (m/s)" value="1.5">
+                        <input type="number" step="1" id="loc_heading" placeholder="Heading (°)" value="45">
+                    </div>
+                </div>
+
+                <button onclick="updateLocation()">🚀 Update Location</button>
+                <div class="response-area" id="loc_response">Response will appear here...</div>
+            </div>
+
+            <!-- 2. TTS Synthesize -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🎤</span>
+                    <div>
+                        <div class="card-title">Test TTS (Deepgram)</div>
+                        <span class="badge badge-post">POST</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Text to Synthesize</label>
+                    <textarea id="tts_text" rows="4" placeholder="Enter text to convert to speech...">Look to your left, Alex. That's Charles Bridge, a medieval stone bridge built in 1357. It connects Prague's Old Town with the Lesser Town across the Vltava River.</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Language</label>
+                    <select id="tts_language">
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="pt">Portuguese</option>
+                        <option value="it">Italian</option>
+                        <option value="ja">Japanese</option>
+                        <option value="ko">Korean</option>
+                        <option value="hi">Hindi</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Vibe</label>
+                    <select id="tts_vibe">
+                        <option value="energetic">Energetic (Asteria - Fast, Dynamic)</option>
+                        <option value="relaxed">Relaxed (Orpheus - Calm, Soothing)</option>
+                    </select>
+                </div>
+
+                <div class="streaming-toggle">
+                    <input type="checkbox" id="tts_streaming">
+                    <label for="tts_streaming" style="margin:0;">Enable Streaming (Real-time playback)</label>
+                </div>
+
+                <button onclick="synthesizeTTS()">🎵 Generate Audio</button>
+                <div class="response-area" id="tts_response">Response will appear here...</div>
+
+                <div class="audio-section" id="tts_audio_section" style="display:none;">
+                    <h4>🎵 Synthesized Audio</h4>
+                    <audio id="tts_audio_player" class="audio-player" controls></audio>
+                </div>
+            </div>
+
+            <!-- 2. Get Nearby POIs -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🏛️</span>
+                    <div>
+                        <div class="card-title">Get Nearby POIs</div>
+                        <span class="badge badge-get">GET</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-group">
+                        <input type="number" step="0.0001" id="poi_lat" placeholder="Latitude" value="50.0875">
+                        <input type="number" step="0.0001" id="poi_lon" placeholder="Longitude" value="14.4213">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Radius (meters)</label>
+                    <input type="number" id="poi_radius" value="200">
+                </div>
+
+                <div class="form-group">
+                    <label>Limit</label>
+                    <input type="number" id="poi_limit" value="10">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="poi_enrich"> Enrich with Wikipedia
+                    </label>
+                </div>
+
+                <button onclick="getNearbyPOIs()">🔍 Fetch POIs</button>
+                <div class="response-area" id="poi_response">Response will appear here...</div>
+            </div>
+
+            <!-- 3. Fetch News -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">📰</span>
+                    <div>
+                        <div class="card-title">Fetch Local News</div>
+                        <span class="badge badge-post">POST</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>User ID</label>
+                    <input type="text" id="news_userId" value="test_user_123">
+                </div>
+
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" id="news_city" value="Prague">
+                </div>
+
+                <div class="form-group">
+                    <label>Country</label>
+                    <input type="text" id="news_country" value="Czech Republic">
+                </div>
+
+                <div class="form-group">
+                    <label>Worldview</label>
+                    <select id="news_worldview">
+                        <option value="progressive">Progressive</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="conservative">Conservative</option>
+                    </select>
+                </div>
+
+                <button onclick="fetchNews()">📡 Fetch News</button>
+                <div class="response-area" id="news_response">Response will appear here...</div>
+            </div>
+
+            <!-- 4. Check Profile -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">👤</span>
+                    <div>
+                        <div class="card-title">Check Profile</div>
+                        <span class="badge badge-post">POST</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>User ID</label>
+                    <input type="text" id="profile_userId" value="test_user_123">
+                </div>
+
+                <div class="form-group">
+                    <label>Name (leave empty to test)</label>
+                    <input type="text" id="profile_name" value="">
+                </div>
+
+                <div class="form-group">
+                    <label>Age (0 = empty)</label>
+                    <input type="number" id="profile_age" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>Worldview</label>
+                    <select id="profile_worldview">
+                        <option value="">None</option>
+                        <option value="progressive">Progressive</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="conservative">Conservative</option>
+                    </select>
+                </div>
+
+                <button onclick="checkProfile()">✅ Check Profile</button>
+                <div class="response-area" id="profile_response">Response will appear here...</div>
+            </div>
+
+            <!-- 5. Health Check -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">❤️</span>
+                    <div>
+                        <div class="card-title">Health Check</div>
+                        <span class="badge badge-get">GET</span>
+                    </div>
+                </div>
+
+                <button onclick="healthCheck()">🏥 Check Health</button>
+                <div class="response-area" id="health_response">Response will appear here...</div>
+            </div>
+
+            <!-- 6. Debug Stats -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">📊</span>
+                    <div>
+                        <div class="card-title">Debug Stats</div>
+                        <span class="badge badge-get">GET</span>
+                    </div>
+                </div>
+
+                <button onclick="getDebugStats()">📈 Get Stats</button>
+                <div class="response-area" id="stats_response">Response will appear here...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let totalRequests = 0;
+        let successCount = 0;
+        let errorCount = 0;
+
+        function updateStats() {
+            document.getElementById('totalRequests').textContent = totalRequests;
+            document.getElementById('successCount').textContent = successCount;
+            document.getElementById('errorCount').textContent = errorCount;
+        }
+
+        function getApiUrl() {
+            return document.getElementById('apiUrl').value.replace(/\/$/, '');
+        }
+
+        function getHeaders() {
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            const apiKey = document.getElementById('apiKey').value;
+            if (apiKey) {
+                headers['X-API-Key'] = apiKey;
+            }
+            return headers;
+        }
+
+        function showLoading(elementId) {
+            document.getElementById(elementId).innerHTML = '<div class="loading"></div> Loading...';
+        }
+
+        function showResponse(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = JSON.stringify(data, null, 2);
+            element.className = isError ? 'response-area response-error' : 'response-area response-success';
+        }
+
+        // Quick fill locations
+        function fillPrague() {
+            document.getElementById('loc_lat').value = '50.0875';
+            document.getElementById('loc_lon').value = '14.4213';
+        }
+
+        function fillNewYork() {
+            document.getElementById('loc_lat').value = '40.7128';
+            document.getElementById('loc_lon').value = '-74.0060';
+        }
+
+        function fillTokyo() {
+            document.getElementById('loc_lat').value = '35.6762';
+            document.getElementById('loc_lon').value = '139.6503';
+        }
+
+        // 1. Update Location
+        async function updateLocation() {
+            showLoading('loc_response');
+            totalRequests++;
+            updateStats();
+
+            try {
+                const interests = document.getElementById('loc_interests').value
+                    .split(',')
+                    .map(i => i.trim())
+                    .filter(i => i);
+
+                const response = await fetch(`${getApiUrl()}/api/v1/location/update?fetch_pois=true`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({
+                        user_id: document.getElementById('loc_userId').value,
+                        profile: {
+                            user_id: document.getElementById('loc_userId').value,
+                            name: document.getElementById('loc_userName').value,
+                            age: parseInt(document.getElementById('loc_age').value),
+                            worldview: document.getElementById('loc_worldview').value,
+                            interests: interests,
+                            vibe: document.getElementById('loc_vibe').value,
+                            language: 'en'
+                        },
+                        location: {
+                            lat: parseFloat(document.getElementById('loc_lat').value),
+                            lon: parseFloat(document.getElementById('loc_lon').value),
+                            speed: parseFloat(document.getElementById('loc_speed').value),
+                            heading: parseFloat(document.getElementById('loc_heading').value),
+                            accuracy: 10.0
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    successCount++;
+                    showResponse('loc_response', data);
+                } else {
+                    errorCount++;
+                    showResponse('loc_response', data, true);
+                }
+            } catch (error) {
+                errorCount++;
+                showResponse('loc_response', { error: error.message }, true);
+            }
+            updateStats();
+        }
+
+        // 2. Get Nearby POIs
+        async function getNearbyPOIs() {
+            showLoading('poi_response');
+            totalRequests++;
+            updateStats();
+
+            try {
+                const lat = document.getElementById('poi_lat').value;
+                const lon = document.getElementById('poi_lon').value;
+                const radius = document.getElementById('poi_radius').value;
+                const limit = document.getElementById('poi_limit').value;
+                const enrich = document.getElementById('poi_enrich').checked;
+
+                const url = `${getApiUrl()}/api/v1/pois/nearby?lat=${lat}&lon=${lon}&radius=${radius}&limit=${limit}&enrich=${enrich}`;
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    successCount++;
+                    showResponse('poi_response', data);
+                } else {
+                    errorCount++;
+                    showResponse('poi_response', data, true);
+                }
+            } catch (error) {
+                errorCount++;
+                showResponse('poi_response', { error: error.message }, true);
+            }
+            updateStats();
+        }
+
+        // 3. Fetch News
+        async function fetchNews() {
+            showLoading('news_response');
+            totalRequests++;
+            updateStats();
+
+            try {
+                const city = document.getElementById('news_city').value;
+                const country = document.getElementById('news_country').value;
+
+                const response = await fetch(`${getApiUrl()}/api/v1/news/fetch?city=${city}&country=${country}`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({
+                        user_id: document.getElementById('news_userId').value,
+                        name: 'Alex',
+                        worldview: document.getElementById('news_worldview').value,
+                        language: 'en'
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    successCount++;
+                    showResponse('news_response', data);
+                } else {
+                    errorCount++;
+                    showResponse('news_response', data, true);
+                }
+            } catch (error) {
+                errorCount++;
+                showResponse('news_response', { error: error.message }, true);
+            }
+            updateStats();
+        }
+
+        // 4. Check Profile
+        async function checkProfile() {
+            showLoading('profile_response');
+            totalRequests++;
+            updateStats();
+
+            try {
+                const age = parseInt(document.getElementById('profile_age').value);
+                const name = document.getElementById('profile_name').value;
+                const worldview = document.getElementById('profile_worldview').value;
+
+                const response = await fetch(`${getApiUrl()}/api/v1/profile/check`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({
+                        user_id: document.getElementById('profile_userId').value,
+                        name: name || null,
+                        age: age || null,
+                        worldview: worldview || null,
+                        interests: [],
+                        vibe: 'relaxed',
+                        language: 'en'
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    successCount++;
+                    showResponse('profile_response', data);
+                } else {
+                    errorCount++;
+                    showResponse('profile_response', data, true);
+                }
+            } catch (error) {
+                errorCount++;
+                showResponse('profile_response', { error: error.message }, true);
+            }
+            updateStats();
+        }
+
+        // 5. Health Check
+        async function healthCheck() {
+            showLoading('health_response');
+            totalRequests++;
+            updateStats();
+
+            try {
+                const response = await fetch(`${getApiUrl()}/api/v1/health`, {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    successCount++;
+                    showResponse('health_response', data);
+                } else {
+                    errorCount++;
+                    showResponse('health_response', data, true);
+                }
+            } catch (error) {
+                errorCount++;
+                showResponse('health_response', { error: error.message }, true);
+            }
+            updateStats();
+        }
+
+        // 6. Debug Stats
+        async function getDebugStats() {
+            showLoading('stats_response');
+            totalRequests++;
+            updateStats();
+
+            try {
+                const response = await fetch(`${getApiUrl()}/api/v1/debug/stats`, {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    successCount++;
+                    showResponse('stats_response', data);
+                } else {
+                    errorCount++;
+                    showResponse('stats_response', data, true);
+                }
+            } catch (error) {
+                errorCount++;
+                showResponse('stats_response', { error: error.message }, true);
+            }
+            updateStats();
+        }
+
+        // 7. Synthesize TTS
+        async function synthesizeTTS() {
+            showLoading('tts_response');
+            totalRequests++;
+            updateStats();
+
+            try {
+                const streaming = document.getElementById('tts_streaming').checked;
+                
+                const response = await fetch(`${getApiUrl()}/api/v1/audio/synthesize`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({
+                        text: document.getElementById('tts_text').value,
+                        profile: {
+                            user_id: 'tts_test',
+                            language: document.getElementById('tts_language').value,
+                            vibe: document.getElementById('tts_vibe').value
+                        },
+                        streaming: streaming
+                    })
+                });
+
+                if (response.ok) {
+                    successCount++;
+                    
+                    const audioBlob = await response.blob();
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    
+                    document.getElementById('tts_audio_section').style.display = 'block';
+                    document.getElementById('tts_audio_player').src = audioUrl;
+                    
+                    showResponse('tts_response', {
+                        success: true,
+                        streaming: streaming,
+                        size_bytes: audioBlob.size,
+                        message: 'Audio generated successfully! Click play above.'
+                    });
+                } else {
+                    errorCount++;
+                    const data = await response.json();
+                    showResponse('tts_response', data, true);
+                }
+            } catch (error) {
+                errorCount++;
+                showResponse('tts_response', { error: error.message }, true);
+            }
+            updateStats();
+        }
+
+        // Auto health check on load
+        window.addEventListener('load', () => {
+            setTimeout(healthCheck, 500);
+        });
+    </script>
+
+    <!-- https://docs.mapbox.com/mapbox-gl-js/guides/ -->
+    <script>
+
+        let map;
+        let userMarker;
+        let triggerCircle;
+        let detectionCircle;
+        let poiMarkers = [];
+        let requestCount = 0;
+        let currentLocation = { lat: 50.0875, lon: 14.4213 };
+
+        
+
+        mapboxgl.accessToken = 'pk.eyJ1IjoicmF2aTQwNDciLCJhIjoiY21rOWNqcGd2MWZpcTNlcXM4OHR1OXlleSJ9.kBeJCwAjt8ISZkvmpgQJrQ';
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/standard', // Use the standard style for the map
+            projection: 'globe', // display the map as a globe
+            zoom: 1, // initial zoom level, 0 is the world view, higher values zoom in
+            center: [30, 15] // center the map on this longitude and latitude
+        });
+
+        map.addControl(new mapboxgl.NavigationControl());
+        map.scrollZoom.disable();
+
+        map.on('style.load', () => {
+            map.setFog({}); // Set the default atmosphere style
+        });
+
+        // Add user location marker
+        updateMapLocation(currentLocation.lat, currentLocation.lon);
+
+
+        function updateMapLocation(lat, lon) {
+            currentLocation = { lat, lon };
+
+            if (!map) {
+                initMap();
+                return;
+            }
+
+            // Remove existing markers and circles
+            if (userMarker) userMarker.remove();
+            if (triggerCircle) map.removeLayer('trigger-circle').removeSource('trigger-circle');
+            if (detectionCircle) map.removeLayer('detection-circle').removeSource('detection-circle');
+
+            // Add user marker
+            const el = document.createElement('div');
+            el.style.width = '30px';
+            el.style.height = '30px';
+            el.style.borderRadius = '50%';
+            el.style.background = '#667eea';
+            el.style.border = '3px solid white';
+            el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+
+            userMarker = new mapboxgl.Marker(el)
+                .setLngLat([lon, lat])
+                .addTo(map);
+
+            // Add circles
+            map.on('load', () => {
+                addCircles(lat, lon);
+            });
+
+            if (map.isStyleLoaded()) {
+                addCircles(lat, lon);
+            }
+
+            // Center map
+            map.flyTo({
+                center: [lon, lat],
+                zoom: 16,
+                duration: 1000
+            });
+        }
+
+        function addCircles(lat, lon) {
+            const radius = parseInt(document.getElementById('radius').value);
+
+            // Detection circle (80m or custom radius)
+            if (map.getSource('detection-circle')) {
+                map.removeLayer('detection-circle');
+                map.removeSource('detection-circle');
+            }
+
+            map.addSource('detection-circle', {
+                type: 'geojson',
+                data: createCircle([lon, lat], radius / 1000) // km
+            });
+
+            map.addLayer({
+                id: 'detection-circle',
+                type: 'fill',
+                source: 'detection-circle',
+                paint: {
+                    'fill-color': '#ff9800',
+                    'fill-opacity': 0.15
+                }
+            });
+
+            map.addLayer({
+                id: 'detection-circle-outline',
+                type: 'line',
+                source: 'detection-circle',
+                paint: {
+                    'line-color': '#ff9800',
+                    'line-width': 2,
+                    'line-dasharray': [2, 2]
+                }
+            });
+
+            // Trigger circle (15m)
+            if (map.getSource('trigger-circle')) {
+                map.removeLayer('trigger-circle');
+                map.removeLayer('trigger-circle-outline');
+                map.removeSource('trigger-circle');
+            }
+
+            map.addSource('trigger-circle', {
+                type: 'geojson',
+                data: createCircle([lon, lat], 0.015) // 15m in km
+            });
+
+            map.addLayer({
+                id: 'trigger-circle',
+                type: 'fill',
+                source: 'trigger-circle',
+                paint: {
+                    'fill-color': '#4caf50',
+                    'fill-opacity': 0.2
+                }
+            });
+
+            map.addLayer({
+                id: 'trigger-circle-outline',
+                type: 'line',
+                source: 'trigger-circle',
+                paint: {
+                    'line-color': '#4caf50',
+                    'line-width': 2
+                }
+            });
+        }
+
+        function createCircle(center, radiusInKm, points = 64) {
+            const coords = {
+                latitude: center[1],
+                longitude: center[0]
+            };
+
+            const km = radiusInKm;
+            const ret = [];
+            const distanceX = km / (111.320 * Math.cos(coords.latitude * Math.PI / 180));
+            const distanceY = km / 110.574;
+
+            for (let i = 0; i < points; i++) {
+                const theta = (i / points) * (2 * Math.PI);
+                const x = distanceX * Math.cos(theta);
+                const y = distanceY * Math.sin(theta);
+                ret.push([coords.longitude + x, coords.latitude + y]);
+            }
+            ret.push(ret[0]);
+
+            return {
+                type: 'Feature',
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: [ret]
+                }
+            };
+        }
+
+        function addPOIMarkers(pois) {
+            // Clear existing POI markers
+            poiMarkers.forEach(marker => marker.remove());
+            poiMarkers = [];
+
+            // Add new POI markers
+            pois.forEach(poi => {
+                const el = document.createElement('div');
+                el.style.width = '24px';
+                el.style.height = '24px';
+                el.style.borderRadius = '50%';
+                el.style.background = '#f44336';
+                el.style.border = '2px solid white';
+                el.style.cursor = 'pointer';
+                el.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+
+                const popup = new mapboxgl.Popup({ offset: 25 })
+                    .setHTML(`
+                        <div class="poi-popup">
+                            <h3>${poi.name}</h3>
+                            <p><strong>Category:</strong> ${poi.category}</p>
+                            ${poi.description ? `<p>${poi.description.substring(0, 100)}...</p>` : ''}
+                        </div>
+                    `);
+
+                const marker = new mapboxgl.Marker(el)
+                    .setLngLat([poi.lon, poi.lat])
+                    .setPopup(popup)
+                    .addTo(map);
+
+                poiMarkers.push(marker);
+            });
+        }
+
+    </script>
+</body>
+</html>

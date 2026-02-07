@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Audio Reality Layer - Debug Dashboard</title>
+
     <style>
         * {
             margin: 0;
@@ -19,7 +20,7 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 900px;
             margin: 0 auto;
         }
 
@@ -65,7 +66,7 @@
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
             gap: 20px;
         }
 
@@ -125,11 +126,6 @@
         input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: #667eea;
-        }
-
-        .input-small {
-            width: calc(50% - 5px);
-            display: inline-block;
         }
 
         .input-group {
@@ -225,7 +221,7 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 15px;
-            margin-top: 20px;
+            margin-bottom: 30px;
         }
 
         .stat-box {
@@ -267,13 +263,38 @@
         .quick-fill:hover {
             background: #bbdefb;
         }
+
+        .audio-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f4ff;
+            border-radius: 8px;
+            border: 2px dashed #667eea;
+        }
+
+        .audio-section h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .script-display {
+            background: #fff;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #333;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>🎧 Audio Reality Layer - Debug Dashboard</h1>
-            <p>Test and debug your AI-powered audio guide backend in real-time</p>
+            <p>Test POI Chat endpoint with AI-powered audio guide</p>
         </div>
 
         <!-- Configuration -->
@@ -281,11 +302,7 @@
             <h3>Backend Configuration</h3>
             <div class="form-group">
                 <label>Backend API URL</label>
-                <input type="text" id="apiUrl" value="http://localhost:8000" placeholder="http://localhost:8000">
-            </div>
-            <div class="form-group">
-                <label>API Key (Optional)</label>
-                <input type="text" id="apiKey" placeholder="your-api-key-here">
+                <input type="text" id="apiUrl" value="https://cityspin-intelligence-service-production.up.railway.app" placeholder="https://your-api-url.com">
             </div>
         </div>
 
@@ -307,190 +324,60 @@
 
         <!-- API Endpoints -->
         <div class="grid">
-            <!-- 1. Location Update -->
+            <!-- POI Chat Endpoint -->
             <div class="card">
                 <div class="card-header">
-                    <span class="card-icon">📍</span>
+                    <span class="card-icon">🎙️</span>
                     <div>
-                        <div class="card-title">Update Location</div>
-                        <span class="badge badge-post">POST</span>
-                    </div>
-                </div>
-                
-                <div class="quick-fill" onclick="fillPrague()">📌 Prague</div>
-                <div class="quick-fill" onclick="fillNewYork()">📌 New York</div>
-                <div class="quick-fill" onclick="fillTokyo()">📌 Tokyo</div>
-
-                <div class="form-group">
-                    <label>User ID</label>
-                    <input type="text" id="loc_userId" value="test_user_123">
-                </div>
-
-                <div class="form-group">
-                    <label>User Name</label>
-                    <input type="text" id="loc_userName" value="Alex">
-                </div>
-
-                <div class="form-group">
-                    <label>Age</label>
-                    <input type="number" id="loc_age" value="28">
-                </div>
-
-                <div class="form-group">
-                    <label>Worldview</label>
-                    <select id="loc_worldview">
-                        <option value="progressive">Progressive</option>
-                        <option value="moderate">Moderate</option>
-                        <option value="conservative">Conservative</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Interests (comma-separated)</label>
-                    <input type="text" id="loc_interests" value="history, architecture">
-                </div>
-
-                <div class="form-group">
-                    <label>Vibe</label>
-                    <select id="loc_vibe">
-                        <option value="energetic">Energetic</option>
-                        <option value="relaxed">Relaxed</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <div class="input-group">
-                        <input type="number" step="0.0001" id="loc_lat" placeholder="Latitude" value="50.0875">
-                        <input type="number" step="0.0001" id="loc_lon" placeholder="Longitude" value="14.4213">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <div class="input-group">
-                        <input type="number" step="0.1" id="loc_speed" placeholder="Speed (m/s)" value="1.5">
-                        <input type="number" step="1" id="loc_heading" placeholder="Heading (°)" value="45">
-                    </div>
-                </div>
-
-                <button onclick="updateLocation()">🚀 Update Location</button>
-                <div class="response-area" id="loc_response">Response will appear here...</div>
-            </div>
-
-            <!-- 2. Get Nearby POIs -->
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-icon">🏛️</span>
-                    <div>
-                        <div class="card-title">Get Nearby POIs</div>
-                        <span class="badge badge-get">GET</span>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <div class="input-group">
-                        <input type="number" step="0.0001" id="poi_lat" placeholder="Latitude" value="50.0875">
-                        <input type="number" step="0.0001" id="poi_lon" placeholder="Longitude" value="14.4213">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Radius (meters)</label>
-                    <input type="number" id="poi_radius" value="200">
-                </div>
-
-                <div class="form-group">
-                    <label>Limit</label>
-                    <input type="number" id="poi_limit" value="10">
-                </div>
-
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="poi_enrich"> Enrich with Wikipedia
-                    </label>
-                </div>
-
-                <button onclick="getNearbyPOIs()">🔍 Fetch POIs</button>
-                <div class="response-area" id="poi_response">Response will appear here...</div>
-            </div>
-
-            <!-- 3. Fetch News -->
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-icon">📰</span>
-                    <div>
-                        <div class="card-title">Fetch Local News</div>
+                        <div class="card-title">POI Chat (Generate Audio)</div>
                         <span class="badge badge-post">POST</span>
                     </div>
                 </div>
 
+                <div class="quick-fill" onclick="fillPOIParis()">📌 Paris POI</div>
+                <div class="quick-fill" onclick="fillPOIPrague()">📌 Prague POI</div>
+
                 <div class="form-group">
-                    <label>User ID</label>
-                    <input type="text" id="news_userId" value="test_user_123">
+                    <label>User ID (Header)</label>
+                    <input type="text" id="poi_chat_userId" value="user1">
                 </div>
 
                 <div class="form-group">
-                    <label>City</label>
-                    <input type="text" id="news_city" value="Prague">
+                    <label>User Email (Header)</label>
+                    <input type="email" id="poi_chat_email" value="r@gmail.com">
                 </div>
 
                 <div class="form-group">
-                    <label>Country</label>
-                    <input type="text" id="news_country" value="Czech Republic">
+                    <label>Latitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="poi_chat_lat" placeholder="e.g., 48.864716" value="48.864716">
                 </div>
 
                 <div class="form-group">
-                    <label>Worldview</label>
-                    <select id="news_worldview">
-                        <option value="progressive">Progressive</option>
-                        <option value="moderate">Moderate</option>
-                        <option value="conservative">Conservative</option>
-                    </select>
+                    <label>Longitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="poi_chat_lon" placeholder="e.g., 2.349014" value="2.349014">
                 </div>
 
-                <button onclick="fetchNews()">📡 Fetch News</button>
-                <div class="response-area" id="news_response">Response will appear here...</div>
+                <div class="form-group">
+                    <label>Speed (meters per second)</label>
+                    <input type="number" step="0.1" id="poi_chat_speed" placeholder="e.g., 5" value="5">
+                </div>
+
+                <div class="form-group">
+                    <label>Heading (degrees, 0-360)</label>
+                    <input type="number" step="1" id="poi_chat_heading" placeholder="e.g., 0" value="0">
+                </div>
+
+                <button onclick="chatPOI()">🎵 Generate POI Audio</button>
+                <div class="response-area" id="poi_chat_response">Response will appear here...</div>
+
+                <div class="audio-section" id="poi_chat_audio_section" style="display:none;">
+                    <h4>🎙️ Generated POI Audio (Auto-playing...)</h4>
+                    <div class="script-display" id="poi_chat_script"></div>
+                    <audio id="poi_chat_audio_player" class="audio-player" controls autoplay></audio>
+                </div>
             </div>
 
-            <!-- 4. Check Profile -->
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-icon">👤</span>
-                    <div>
-                        <div class="card-title">Check Profile</div>
-                        <span class="badge badge-post">POST</span>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>User ID</label>
-                    <input type="text" id="profile_userId" value="test_user_123">
-                </div>
-
-                <div class="form-group">
-                    <label>Name (leave empty to test)</label>
-                    <input type="text" id="profile_name" value="">
-                </div>
-
-                <div class="form-group">
-                    <label>Age (0 = empty)</label>
-                    <input type="number" id="profile_age" value="0">
-                </div>
-
-                <div class="form-group">
-                    <label>Worldview</label>
-                    <select id="profile_worldview">
-                        <option value="">None</option>
-                        <option value="progressive">Progressive</option>
-                        <option value="moderate">Moderate</option>
-                        <option value="conservative">Conservative</option>
-                    </select>
-                </div>
-
-                <button onclick="checkProfile()">✅ Check Profile</button>
-                <div class="response-area" id="profile_response">Response will appear here...</div>
-            </div>
-
-            <!-- 5. Health Check -->
+            <!-- Health Check -->
             <div class="card">
                 <div class="card-header">
                     <span class="card-icon">❤️</span>
@@ -500,26 +387,15 @@
                     </div>
                 </div>
 
+                <p style="color: #666; margin-bottom: 15px;">Check if the backend API is running and healthy.</p>
+
                 <button onclick="healthCheck()">🏥 Check Health</button>
                 <div class="response-area" id="health_response">Response will appear here...</div>
-            </div>
-
-            <!-- 6. Debug Stats -->
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-icon">📊</span>
-                    <div>
-                        <div class="card-title">Debug Stats</div>
-                        <span class="badge badge-get">GET</span>
-                    </div>
-                </div>
-
-                <button onclick="getDebugStats()">📈 Get Stats</button>
-                <div class="response-area" id="stats_response">Response will appear here...</div>
             </div>
         </div>
     </div>
 
+    <!-- API Functions -->
     <script>
         let totalRequests = 0;
         let successCount = 0;
@@ -535,17 +411,6 @@
             return document.getElementById('apiUrl').value.replace(/\/$/, '');
         }
 
-        function getHeaders() {
-            const headers = {
-                'Content-Type': 'application/json'
-            };
-            const apiKey = document.getElementById('apiKey').value;
-            if (apiKey) {
-                headers['X-API-Key'] = apiKey;
-            }
-            return headers;
-        }
-
         function showLoading(elementId) {
             document.getElementById(elementId).innerHTML = '<div class="loading"></div> Loading...';
         }
@@ -556,185 +421,74 @@
             element.className = isError ? 'response-area response-error' : 'response-area response-success';
         }
 
-        // Quick fill locations
-        function fillPrague() {
-            document.getElementById('loc_lat').value = '50.0875';
-            document.getElementById('loc_lon').value = '14.4213';
+        // Quick fill POI locations
+        function fillPOIParis() {
+            document.getElementById('poi_chat_lat').value = '48.864716';
+            document.getElementById('poi_chat_lon').value = '2.349014';
         }
 
-        function fillNewYork() {
-            document.getElementById('loc_lat').value = '40.7128';
-            document.getElementById('loc_lon').value = '-74.0060';
+        function fillPOIPrague() {
+            document.getElementById('poi_chat_lat').value = '50.073658';
+            document.getElementById('poi_chat_lon').value = '14.418540';
         }
 
-        function fillTokyo() {
-            document.getElementById('loc_lat').value = '35.6762';
-            document.getElementById('loc_lon').value = '139.6503';
-        }
-
-        // 1. Update Location
-        async function updateLocation() {
-            showLoading('loc_response');
+        // POI Chat Endpoint
+        async function chatPOI() {
+            showLoading('poi_chat_response');
             totalRequests++;
             updateStats();
 
             try {
-                const interests = document.getElementById('loc_interests').value
-                    .split(',')
-                    .map(i => i.trim())
-                    .filter(i => i);
-
-                const response = await fetch(`${getApiUrl()}/api/v1/location/update?fetch_pois=true`, {
+                const response = await fetch(`${getApiUrl()}/api/v1/chat/poi`, {
                     method: 'POST',
-                    headers: getHeaders(),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-Id': document.getElementById('poi_chat_userId').value,
+                        'X-User-Email': document.getElementById('poi_chat_email').value,
+                        'X-User-Email-Verified': 'true'
+                    },
                     body: JSON.stringify({
-                        user_id: document.getElementById('loc_userId').value,
-                        profile: {
-                            user_id: document.getElementById('loc_userId').value,
-                            name: document.getElementById('loc_userName').value,
-                            age: parseInt(document.getElementById('loc_age').value),
-                            worldview: document.getElementById('loc_worldview').value,
-                            interests: interests,
-                            vibe: document.getElementById('loc_vibe').value,
-                            language: 'en'
-                        },
-                        location: {
-                            lat: parseFloat(document.getElementById('loc_lat').value),
-                            lon: parseFloat(document.getElementById('loc_lon').value),
-                            speed: parseFloat(document.getElementById('loc_speed').value),
-                            heading: parseFloat(document.getElementById('loc_heading').value),
-                            accuracy: 10.0
-                        }
+                        event: "POI_EVENT",
+                        latitude: parseFloat(document.getElementById('poi_chat_lat').value),
+                        longitude: parseFloat(document.getElementById('poi_chat_lon').value),
+                        speed_mps: parseFloat(document.getElementById('poi_chat_speed').value),
+                        heading_deg: parseFloat(document.getElementById('poi_chat_heading').value)
                     })
                 });
 
                 const data = await response.json();
                 if (response.ok) {
                     successCount++;
-                    showResponse('loc_response', data);
+                    showResponse('poi_chat_response', data);
+
+                    // Display audio section with script
+                    document.getElementById('poi_chat_audio_section').style.display = 'block';
+                    document.getElementById('poi_chat_script').textContent = data.content.script;
+                    
+                    // Set audio URL and auto-play
+                    const audioPlayer = document.getElementById('poi_chat_audio_player');
+                    audioPlayer.src = data.content.audio_url;
+                    
+                    // Auto-play the audio
+                    audioPlayer.play().catch(error => {
+                        console.log('Auto-play failed (browser policy):', error);
+                        showResponse('poi_chat_response', {
+                            ...data,
+                            note: 'Audio ready! Click play if it didn\'t auto-start.'
+                        });
+                    });
                 } else {
                     errorCount++;
-                    showResponse('loc_response', data, true);
+                    showResponse('poi_chat_response', data, true);
                 }
             } catch (error) {
                 errorCount++;
-                showResponse('loc_response', { error: error.message }, true);
+                showResponse('poi_chat_response', { error: error.message }, true);
             }
             updateStats();
         }
 
-        // 2. Get Nearby POIs
-        async function getNearbyPOIs() {
-            showLoading('poi_response');
-            totalRequests++;
-            updateStats();
-
-            try {
-                const lat = document.getElementById('poi_lat').value;
-                const lon = document.getElementById('poi_lon').value;
-                const radius = document.getElementById('poi_radius').value;
-                const limit = document.getElementById('poi_limit').value;
-                const enrich = document.getElementById('poi_enrich').checked;
-
-                const url = `${getApiUrl()}/api/v1/pois/nearby?lat=${lat}&lon=${lon}&radius=${radius}&limit=${limit}&enrich=${enrich}`;
-                
-                const response = await fetch(url, {
-                    method: 'GET',
-                    headers: getHeaders()
-                });
-
-                const data = await response.json();
-                if (response.ok) {
-                    successCount++;
-                    showResponse('poi_response', data);
-                } else {
-                    errorCount++;
-                    showResponse('poi_response', data, true);
-                }
-            } catch (error) {
-                errorCount++;
-                showResponse('poi_response', { error: error.message }, true);
-            }
-            updateStats();
-        }
-
-        // 3. Fetch News
-        async function fetchNews() {
-            showLoading('news_response');
-            totalRequests++;
-            updateStats();
-
-            try {
-                const city = document.getElementById('news_city').value;
-                const country = document.getElementById('news_country').value;
-
-                const response = await fetch(`${getApiUrl()}/api/v1/news/fetch?city=${city}&country=${country}`, {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: JSON.stringify({
-                        user_id: document.getElementById('news_userId').value,
-                        name: 'Alex',
-                        worldview: document.getElementById('news_worldview').value,
-                        language: 'en'
-                    })
-                });
-
-                const data = await response.json();
-                if (response.ok) {
-                    successCount++;
-                    showResponse('news_response', data);
-                } else {
-                    errorCount++;
-                    showResponse('news_response', data, true);
-                }
-            } catch (error) {
-                errorCount++;
-                showResponse('news_response', { error: error.message }, true);
-            }
-            updateStats();
-        }
-
-        // 4. Check Profile
-        async function checkProfile() {
-            showLoading('profile_response');
-            totalRequests++;
-            updateStats();
-
-            try {
-                const age = parseInt(document.getElementById('profile_age').value);
-                const name = document.getElementById('profile_name').value;
-                const worldview = document.getElementById('profile_worldview').value;
-
-                const response = await fetch(`${getApiUrl()}/api/v1/profile/check`, {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: JSON.stringify({
-                        user_id: document.getElementById('profile_userId').value,
-                        name: name || null,
-                        age: age || null,
-                        worldview: worldview || null,
-                        interests: [],
-                        vibe: 'relaxed',
-                        language: 'en'
-                    })
-                });
-
-                const data = await response.json();
-                if (response.ok) {
-                    successCount++;
-                    showResponse('profile_response', data);
-                } else {
-                    errorCount++;
-                    showResponse('profile_response', data, true);
-                }
-            } catch (error) {
-                errorCount++;
-                showResponse('profile_response', { error: error.message }, true);
-            }
-            updateStats();
-        }
-
-        // 5. Health Check
+        // Health Check
         async function healthCheck() {
             showLoading('health_response');
             totalRequests++;
@@ -743,7 +497,9 @@
             try {
                 const response = await fetch(`${getApiUrl()}/api/v1/health`, {
                     method: 'GET',
-                    headers: getHeaders()
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 });
 
                 const data = await response.json();
@@ -757,33 +513,6 @@
             } catch (error) {
                 errorCount++;
                 showResponse('health_response', { error: error.message }, true);
-            }
-            updateStats();
-        }
-
-        // 6. Debug Stats
-        async function getDebugStats() {
-            showLoading('stats_response');
-            totalRequests++;
-            updateStats();
-
-            try {
-                const response = await fetch(`${getApiUrl()}/api/v1/debug/stats`, {
-                    method: 'GET',
-                    headers: getHeaders()
-                });
-
-                const data = await response.json();
-                if (response.ok) {
-                    successCount++;
-                    showResponse('stats_response', data);
-                } else {
-                    errorCount++;
-                    showResponse('stats_response', data, true);
-                }
-            } catch (error) {
-                errorCount++;
-                showResponse('stats_response', { error: error.message }, true);
             }
             updateStats();
         }

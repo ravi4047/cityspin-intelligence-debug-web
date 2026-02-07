@@ -78,3 +78,74 @@ Monitor Stats:
 
 Watch cache sizes grow in Debug Stats
 Verify POI cache is working
+
+
+async function updateLocation() {
+            const lat = parseFloat(document.getElementById('lat').value);
+            const lon = parseFloat(document.getElementById('lon').value);
+            const apiUrl = document.getElementById('apiUrl').value.replace(/\/$/, '');
+
+            document.getElementById('loadingOverlay').classList.add('show');
+            requestCount++;
+            document.getElementById('requestCount').textContent = requestCount;
+
+            try {
+                const response = await fetch(`${apiUrl}/api/v1/location/update?fetch_pois=true`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: 'debug_user',
+                        profile: {
+                            user_id: 'debug_user',
+                            name: document.getElementById('userName').value,
+                            age: 28,
+                            language: document.getElementById('language').value,
+                            vibe: document.getElementById('vibe').value,
+                            worldview: 'moderate',
+                            interests: ['history', 'architecture']
+                        },
+                        location: {
+                            lat: lat,
+                            lon: lon,
+                            speed: parseFloat(document.getElementById('speed').value),
+                            heading: parseFloat(document.getElementById('heading').value),
+                            accuracy: 10.0
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                
+                // Update response display
+                const responseEl = document.getElementById('response');
+                responseEl.textContent = JSON.stringify(data, null, 2);
+                responseEl.className = response.ok ? 'response-area response-success' : 'response-area response-error';
+
+                // Fetch POIs to display on map
+                const poisResponse = await fetch(
+                    `${apiUrl}/api/v1/pois/nearby?lat=${lat}&lon=${lon}&radius=${document.getElementById('radius').value}&limit=20`
+                );
+                const pois = await poisResponse.json();
+
+                // Update map
+                updateMapLocation(lat, lon);
+                addPOIMarkers(pois);
+
+                // Update POI list
+                document.getElementById('poiCount').textContent = pois.length;
+                const poiListEl = document.getElementById('poiList');
+                poiListEl.innerHTML = pois.map(poi => `
+                    <div class="poi-item" onclick="map.flyTo({center: [${poi.lon}, ${poi.lat}], zoom: 18})">
+                        <strong>${poi.name}</strong><br>
+                        <small>${poi.category} · ${calculateDistance(lat, lon, poi.lat, poi.lon).toFixed(0)}m away</small>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                const responseEl = document.getElementById('response');
+                responseEl.textContent = JSON.stringify({ error: error.message }, null, 2);
+                responseEl.className = 'response-area response-error';
+            } finally {
+                document.getElementById('loadingOverlay').classList.remove('show');
+            }
+        }

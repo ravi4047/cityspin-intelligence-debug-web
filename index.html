@@ -336,6 +336,7 @@
 
                 <div class="quick-fill" onclick="fillPOIParis()">📌 Paris POI</div>
                 <div class="quick-fill" onclick="fillPOIPrague()">📌 Prague POI</div>
+                <div class="quick-fill" onclick="fillPOIBrussels()">📌 Brussels POI</div>
 
                 <div class="form-group">
                     <label>User ID (Header)</label>
@@ -430,6 +431,11 @@
         function fillPOIPrague() {
             document.getElementById('poi_chat_lat').value = '50.073658';
             document.getElementById('poi_chat_lon').value = '14.418540';
+        }
+
+        function fillPOIBrussels() {
+            document.getElementById('poi_chat_lat').value = '50.847767';
+            document.getElementById('poi_chat_lon').value = '4.349394';
         }
 
         // POI Chat Endpoint

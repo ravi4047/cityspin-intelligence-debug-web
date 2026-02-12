@@ -445,6 +445,68 @@
                 </div>
             </div>
 
+
+            <!-- POI Chat Open Multipart Endpoint -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🎭</span>
+                    <div>
+                        <div class="card-title">POI Open (Multipart)</div>
+                        <span class="badge badge-post">POST</span>
+                    </div>
+                </div>
+
+                <div class="quick-fill" onclick="fillPOIMultiEiffelTower()">📌 Eiffel Tower POI</div>
+                <div class="quick-fill" onclick="fillPOIMultiParis()">📌 Paris POI</div>
+                <div class="quick-fill" onclick="fillPOIMultiPrague()">📌 Prague POI</div>
+                <div class="quick-fill" onclick="fillPOIMultiBrussels()">📌 Brussels POI</div>
+
+                <div class="form-group">
+                    <label>User ID (Header)</label>
+                    <input type="text" id="poi_multi_userId" value="user1">
+                </div>
+
+                <div class="form-group">
+                    <label>User Email (Header)</label>
+                    <input type="email" id="poi_multi_email" value="r@gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Latitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="poi_multi_lat" placeholder="e.g., 48.864716" value="48.864716">
+                </div>
+
+                <div class="form-group">
+                    <label>Longitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="poi_multi_lon" placeholder="e.g., 2.349014" value="2.349014">
+                </div>
+
+                <div class="form-group">
+                    <label>Speed (meters per second)</label>
+                    <input type="number" step="0.1" id="poi_multi_speed" placeholder="e.g., 5" value="5">
+                </div>
+
+                <div class="form-group">
+                    <label>Heading (degrees, 0-360)</label>
+                    <input type="number" step="1" id="poi_multi_heading" placeholder="e.g., 0" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>User Text (Custom Message) <span style="color: #f44336;">*</span></label>
+                    <textarea id="poi_multi_text" placeholder="Type your custom text here... Can be a few words or multiple sentences." required></textarea>
+                </div>
+
+                <button onclick="chatPOIMultipart()">🎭 Generate Multipart Audio</button>
+                <div class="response-area" id="poi_multi_response">Response will appear here...</div>
+
+                <div class="audio-section" id="poi_multi_audio_section" style="display:none;">
+                    <h4>📊 Metadata</h4>
+                    <div class="script-display" id="poi_multi_metadata"></div>
+                    <h4 style="margin-top: 15px;">🎙️ Audio (Auto-playing...)</h4>
+                    <audio id="poi_multi_audio_player" class="audio-player" controls autoplay></audio>
+                </div>
+            </div>
+
             <!-- Health Check -->
             <div class="card">
                 <div class="card-header">
@@ -554,6 +616,27 @@
         function fillPOIOpenBrussels() {
             document.getElementById('poi_open_lat').value = '50.847767';
             document.getElementById('poi_open_lon').value = '4.349394';
+        }
+
+        // Quick fill POI locations (multipart endpoint)
+        function fillPOIMultiEiffelTower() {
+            document.getElementById('poi_multi_lat').value = '48.858093';
+            document.getElementById('poi_multi_lon').value = '2.294694';
+        }
+
+        function fillPOIMultiParis() {
+            document.getElementById('poi_multi_lat').value = '48.864716';
+            document.getElementById('poi_multi_lon').value = '2.349014';
+        }
+
+        function fillPOIMultiPrague() {
+            document.getElementById('poi_multi_lat').value = '50.073658';
+            document.getElementById('poi_multi_lon').value = '14.418540';
+        }
+
+        function fillPOIMultiBrussels() {
+            document.getElementById('poi_multi_lat').value = '50.847767';
+            document.getElementById('poi_multi_lon').value = '4.349394';
         }
 
         // POI Chat Endpoint
@@ -690,6 +773,194 @@
                 const duration = endTime - startTime;
                 errorCount++;
                 showResponse('poi_open_response', { error: error.message }, true, duration);
+            }
+            updateStats();
+        }
+
+
+        // Parse multipart/mixed response
+        function parseMultipartResponse(arrayBuffer, boundary) {
+            const decoder = new TextDecoder('utf-8');
+            const text = decoder.decode(arrayBuffer);
+            
+            // Split by boundary
+            const parts = text.split(`--${boundary}`);
+            
+            let jsonData = null;
+            let audioBlob = null;
+            
+            for (let part of parts) {
+                if (part.includes('Content-Type: application/json')) {
+                    // Extract JSON
+                    const jsonMatch = part.match(/\r?\n\r?\n([\s\S]+?)(\r?\n|$)/);
+                    if (jsonMatch) {
+                        try {
+                            jsonData = JSON.parse(jsonMatch[1].trim());
+                        } catch (e) {
+                            console.error('Failed to parse JSON:', e);
+                        }
+                    }
+                } else if (part.includes('Content-Type: audio/mpeg')) {
+                    // Extract audio bytes
+                    const audioStart = part.indexOf('\r\n\r\n') + 4;
+                    if (audioStart > 3) {
+                        // Convert the text representation back to binary
+                        const audioText = part.substring(audioStart);
+                        // We need to get the raw bytes, so we'll need to re-parse from the original buffer
+                    }
+                }
+            }
+            
+            // Re-parse for audio using binary approach
+            const uint8Array = new Uint8Array(arrayBuffer);
+            const boundaryBytes = new TextEncoder().encode(`--${boundary}\r\n`);
+            
+            // Find audio part
+            let audioStartIdx = -1;
+            const audioMarker = new TextEncoder().encode('Content-Type: audio/mpeg');
+            
+            for (let i = 0; i < uint8Array.length - audioMarker.length; i++) {
+                let match = true;
+                for (let j = 0; j < audioMarker.length; j++) {
+                    if (uint8Array[i + j] !== audioMarker[j]) {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match) {
+                    // Find the \r\n\r\n after Content-Type header
+                    for (let k = i; k < uint8Array.length - 4; k++) {
+                        if (uint8Array[k] === 13 && uint8Array[k+1] === 10 && 
+                            uint8Array[k+2] === 13 && uint8Array[k+3] === 10) {
+                            audioStartIdx = k + 4;
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+            
+            if (audioStartIdx > -1) {
+                // Find the end boundary
+                const endBoundary = new TextEncoder().encode(`\r\n--${boundary}`);
+                let audioEndIdx = uint8Array.length;
+                
+                for (let i = audioStartIdx; i < uint8Array.length - endBoundary.length; i++) {
+                    let match = true;
+                    for (let j = 0; j < endBoundary.length; j++) {
+                        if (uint8Array[i + j] !== endBoundary[j]) {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match) {
+                        audioEndIdx = i;
+                        break;
+                    }
+                }
+                
+                const audioBytes = uint8Array.slice(audioStartIdx, audioEndIdx);
+                audioBlob = new Blob([audioBytes], { type: 'audio/mpeg' });
+            }
+            
+            return { jsonData, audioBlob };
+        }
+
+        // POI Chat Open Multipart Endpoint
+        async function chatPOIMultipart() {
+            // Validate that user_text is not empty
+            const userText = document.getElementById('poi_multi_text').value.trim();
+            if (!userText) {
+                showResponse('poi_multi_response', { 
+                    error: 'User text is required. Please enter your custom message.' 
+                }, true);
+                return;
+            }
+
+            showLoading('poi_multi_response');
+            totalRequests++;
+            updateStats();
+
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch(`${getApiUrl()}/api/v1/chat/poi/open-new`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-Id': document.getElementById('poi_multi_userId').value,
+                        'X-User-Email': document.getElementById('poi_multi_email').value,
+                        'X-User-Email-Verified': 'true'
+                    },
+                    body: JSON.stringify({
+                        event: "POI_EVENT",
+                        latitude: parseFloat(document.getElementById('poi_multi_lat').value),
+                        longitude: parseFloat(document.getElementById('poi_multi_lon').value),
+                        speed_mps: parseFloat(document.getElementById('poi_multi_speed').value),
+                        heading_deg: parseFloat(document.getElementById('poi_multi_heading').value),
+                        user_text: userText
+                    })
+                });
+
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+
+                if (response.ok) {
+                    // Get the boundary from Content-Type header
+                    const contentType = response.headers.get('Content-Type');
+                    const boundaryMatch = contentType.match(/boundary=([^;]+)/);
+                    
+                    if (!boundaryMatch) {
+                        throw new Error('No boundary found in multipart response');
+                    }
+                    
+                    const boundary = boundaryMatch[1];
+                    
+                    // Get response as ArrayBuffer
+                    const arrayBuffer = await response.arrayBuffer();
+                    
+                    // Parse multipart response
+                    const { jsonData, audioBlob } = parseMultipartResponse(arrayBuffer, boundary);
+                    
+                    if (!jsonData || !audioBlob) {
+                        throw new Error('Failed to parse multipart response');
+                    }
+                    
+                    successCount++;
+                    showResponse('poi_multi_response', { 
+                        status: 'success',
+                        message: 'Multipart response parsed successfully',
+                        metadata: jsonData
+                    }, false, duration);
+
+                    // Display audio section with metadata
+                    document.getElementById('poi_multi_audio_section').style.display = 'block';
+                    document.getElementById('poi_multi_metadata').textContent = JSON.stringify(jsonData, null, 2);
+                    
+                    // Set audio URL from blob and auto-play
+                    const audioPlayer = document.getElementById('poi_multi_audio_player');
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    audioPlayer.src = audioUrl;
+                    
+                    // Auto-play the audio
+                    audioPlayer.play().catch(error => {
+                        console.log('Auto-play failed (browser policy):', error);
+                        showResponse('poi_multi_response', {
+                            status: 'success',
+                            message: 'Audio ready! Click play if it didn\'t auto-start.',
+                            metadata: jsonData
+                        }, false, duration);
+                    });
+                } else {
+                    errorCount++;
+                    const errorText = await response.text();
+                    showResponse('poi_multi_response', { error: errorText }, true, duration);
+                }
+            } catch (error) {
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+                errorCount++;
+                showResponse('poi_multi_response', { error: error.message }, true, duration);
             }
             updateStats();
         }

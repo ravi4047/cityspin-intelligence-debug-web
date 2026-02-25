@@ -445,6 +445,99 @@
                 </div>
             </div>
 
+            <!-- Prepare Open Endpoint (New) -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🆕</span>
+                    <div>
+                        <div class="card-title">Prepare Open (New)</div>
+                        <span class="badge badge-post">POST</span>
+                    </div>
+                </div>
+
+                <div class="quick-fill" onclick="fillPrepareOpenEiffelTower()">📌 Eiffel Tower POI</div>
+                <div class="quick-fill" onclick="fillPrepareOpenParis()">📌 Paris POI</div>
+                <div class="quick-fill" onclick="fillPrepareOpenPrague()">📌 Prague POI</div>
+                <div class="quick-fill" onclick="fillPrepareOpenBrussels()">📌 Brussels POI</div>
+
+                <div class="form-group">
+                    <label>User ID (Header)</label>
+                    <input type="text" id="prepare_open_userId" value="user1">
+                </div>
+
+                <div class="form-group">
+                    <label>User Email (Header)</label>
+                    <input type="email" id="prepare_open_email" value="r@gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Latitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="prepare_open_lat" value="48.858093">
+                </div>
+
+                <div class="form-group">
+                    <label>Longitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="prepare_open_lon" value="2.294694">
+                </div>
+
+                <div class="form-group">
+                    <label>Speed (meters per second)</label>
+                    <input type="number" step="0.1" id="prepare_open_speed" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>Heading (degrees, 0-360)</label>
+                    <input type="number" step="1" id="prepare_open_heading" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>POI ID <span style="color: #f44336;">*</span></label>
+                    <input type="text" id="prepare_open_poi_id" placeholder="Enter POI UUID/string ID" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Open Text <span style="color: #f44336;">*</span></label>
+                    <textarea id="prepare_open_text" placeholder="Type custom open text for prepare/open..." required></textarea>
+                </div>
+
+                <button onclick="prepareOpenOnly()">📝 Prepare Script</button>
+                <div class="response-area" id="prepare_open_response">Response will appear here...</div>
+            </div>
+
+            <!-- Test POI Audio Endpoint (New) -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🔊</span>
+                    <div>
+                        <div class="card-title">Test POI Audio (New)</div>
+                        <span class="badge badge-get">GET</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>User ID (Header)</label>
+                    <input type="text" id="prepare_audio_userId" value="user1">
+                </div>
+
+                <div class="form-group">
+                    <label>User Email (Header)</label>
+                    <input type="email" id="prepare_audio_email" value="r@gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Script ID <span style="color: #f44336;">*</span></label>
+                    <input type="text" id="prepare_audio_script_id" placeholder="Paste script_id from prepare/open response">
+                </div>
+
+                <button onclick="fetchPoiAudioOnly()">🎧 Fetch Audio</button>
+                <div class="response-area" id="prepare_audio_response">Response will appear here...</div>
+
+                <div class="audio-section" id="prepare_audio_section" style="display:none;">
+                    <h4>🎙️ Test POI Audio</h4>
+                    <audio id="prepare_audio_player" class="audio-player" controls autoplay></audio>
+                </div>
+            </div>
+
 
             <!-- POI Chat Open Multipart Endpoint -->
             <div class="card">
@@ -618,6 +711,31 @@
             document.getElementById('poi_open_lon').value = '4.349394';
         }
 
+        // Quick fill POI locations (new prepare/open + test/poi endpoints)
+        function fillPrepareOpenEiffelTower() {
+            document.getElementById('prepare_open_lat').value = '48.858093';
+            document.getElementById('prepare_open_lon').value = '2.294694';
+            document.getElementById('prepare_open_poi_id').value = '16';
+        }
+
+        function fillPrepareOpenParis() {
+            document.getElementById('prepare_open_lat').value = '48.864716';
+            document.getElementById('prepare_open_lon').value = '2.349014';
+            document.getElementById('prepare_open_poi_id').value = '17';
+        }
+
+        function fillPrepareOpenPrague() {
+            document.getElementById('prepare_open_lat').value = '50.073658';
+            document.getElementById('prepare_open_lon').value = '14.418540';
+            document.getElementById('prepare_open_poi_id').value = '18';
+        }
+
+        function fillPrepareOpenBrussels() {
+            document.getElementById('prepare_open_lat').value = '50.847767';
+            document.getElementById('prepare_open_lon').value = '4.349394';
+            document.getElementById('prepare_open_poi_id').value = '19';
+        }
+
         // Quick fill POI locations (multipart endpoint)
         function fillPOIMultiEiffelTower() {
             document.getElementById('poi_multi_lat').value = '48.858093';
@@ -774,6 +892,175 @@
                 errorCount++;
                 showResponse('poi_open_response', { error: error.message }, true, duration);
             }
+            updateStats();
+        }
+
+        async function prepareOpenOnly() {
+            const openText = document.getElementById('prepare_open_text').value.trim();
+            const poiId = document.getElementById('prepare_open_poi_id').value.trim();
+            if (!openText) {
+                showResponse('prepare_open_response', { error: 'Open text is required.' }, true);
+                return;
+            }
+            if (!poiId) {
+                showResponse('prepare_open_response', { error: 'POI ID is required.' }, true);
+                return;
+            }
+
+            showLoading('prepare_open_response');
+            totalRequests++;
+            updateStats();
+            const startTime = performance.now();
+
+            try {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'X-User-Id': document.getElementById('prepare_open_userId').value,
+                    'X-User-Email': document.getElementById('prepare_open_email').value,
+                    'X-User-Email-Verified': 'false'
+                };
+
+                const prepareResponse = await fetch(`${getApiUrl()}/api/v1/test/poi/prepare/open`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        latitude: parseFloat(document.getElementById('prepare_open_lat').value),
+                        longitude: parseFloat(document.getElementById('prepare_open_lon').value),
+                        speed_mps: parseFloat(document.getElementById('prepare_open_speed').value),
+                        heading_deg: parseFloat(document.getElementById('prepare_open_heading').value),
+                        poi_id: poiId,
+                        open_text: openText
+                    })
+                });
+
+                const prepareData = await prepareResponse.json();
+                const duration = performance.now() - startTime;
+                if (!prepareResponse.ok) {
+                    errorCount++;
+                    showResponse('prepare_open_response', prepareData, true, duration);
+                    updateStats();
+                    return;
+                }
+
+                if (!prepareData.script_id) {
+                    throw new Error('prepare/open did not return script_id');
+                }
+
+                successCount++;
+                showResponse('prepare_open_response', prepareData, false, duration);
+                document.getElementById('prepare_audio_script_id').value = prepareData.script_id;
+            } catch (error) {
+                const duration = performance.now() - startTime;
+                errorCount++;
+                showResponse('prepare_open_response', { error: error.message }, true, duration);
+            }
+            updateStats();
+        }
+
+        async function fetchPoiAudioOnly() {
+            const scriptId = document.getElementById('prepare_audio_script_id').value.trim();
+            if (!scriptId) {
+                showResponse('prepare_audio_response', { error: 'Script ID is required.' }, true);
+                return;
+            }
+
+            showLoading('prepare_audio_response');
+            totalRequests++;
+            updateStats();
+            const startTime = performance.now();
+
+            try {
+                const headers = {
+                    'X-User-Id': document.getElementById('prepare_audio_userId').value,
+                    'X-User-Email': document.getElementById('prepare_audio_email').value,
+                    'X-User-Email-Verified': 'false'
+                };
+
+                const response = await fetch(`${getApiUrl()}/api/v1/audio/test/poi/${encodeURIComponent(scriptId)}`, {
+                    method: 'GET',
+                    headers
+                });
+
+                const duration = performance.now() - startTime;
+                const contentType = response.headers.get('Content-Type') || '';
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    errorCount++;
+                    showResponse('prepare_audio_response', { error: errorText }, true, duration);
+                    updateStats();
+                    return;
+                }
+
+                if (contentType.includes('audio/mpeg') || contentType.startsWith('audio/')) {
+                    const audioBlob = await response.blob();
+                    const audioPlayer = document.getElementById('prepare_audio_player');
+
+                    if (audioPlayer.dataset.objectUrl) {
+                        URL.revokeObjectURL(audioPlayer.dataset.objectUrl);
+                        delete audioPlayer.dataset.objectUrl;
+                    }
+
+                    const objectUrl = URL.createObjectURL(audioBlob);
+                    audioPlayer.src = objectUrl;
+                    audioPlayer.dataset.objectUrl = objectUrl;
+                    document.getElementById('prepare_audio_section').style.display = 'block';
+
+                    successCount++;
+                    showResponse('prepare_audio_response', {
+                        script_id: scriptId,
+                        status: 'audio_stream_ready'
+                    }, false, duration);
+
+                    audioPlayer.play().catch(error => {
+                        console.log('Auto-play failed (browser policy):', error);
+                    });
+                } else {
+                    const payload = await response.json();
+                    const status = (payload.status || '').toLowerCase();
+
+                    if (status === 'failed') {
+                        errorCount++;
+                        showResponse('prepare_audio_response', {
+                            ...payload,
+                            error: payload.message || 'Audio generation failed.'
+                        }, true, duration);
+                        updateStats();
+                        return;
+                    }
+
+                    if (status === 'completed') {
+                        if (!payload.audio_url) {
+                            errorCount++;
+                            showResponse('prepare_audio_response', {
+                                ...payload,
+                                error: 'Completed status returned without audio_url.'
+                            }, true, duration);
+                            updateStats();
+                            return;
+                        }
+
+                        const audioPlayer = document.getElementById('prepare_audio_player');
+                        if (audioPlayer.dataset.objectUrl) {
+                            URL.revokeObjectURL(audioPlayer.dataset.objectUrl);
+                            delete audioPlayer.dataset.objectUrl;
+                        }
+
+                        audioPlayer.src = payload.audio_url;
+                        document.getElementById('prepare_audio_section').style.display = 'block';
+                        audioPlayer.play().catch(error => {
+                            console.log('Auto-play failed (browser policy):', error);
+                        });
+                    }
+
+                    successCount++;
+                    showResponse('prepare_audio_response', payload, false, duration);
+                }
+            } catch (error) {
+                const duration = performance.now() - startTime;
+                errorCount++;
+                showResponse('prepare_audio_response', { error: error.message }, true, duration);
+            }
+
             updateStats();
         }
 

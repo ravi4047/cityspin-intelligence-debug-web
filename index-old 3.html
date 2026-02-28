@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Reality Layer - Debug Dashboard</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .config-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .config-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-section h3::before {
+            content: "⚙️";
+            font-size: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .card-icon {
+            font-size: 28px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .response-area {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            min-height: 120px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .response-success {
+            border-color: #4caf50;
+            background: #f1f8f4;
+        }
+
+        .response-error {
+            border-color: #f44336;
+            background: #fef1f0;
+            color: #c62828;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .badge-get {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-post {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .audio-player {
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .quick-fill {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            display: inline-block;
+            margin: 5px 5px 5px 0;
+            transition: background 0.2s;
+        }
+
+        .quick-fill:hover {
+            background: #bbdefb;
+        }
+
+        .audio-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f4ff;
+            border-radius: 8px;
+            border: 2px dashed #667eea;
+        }
+
+        .audio-section h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .script-display {
+            background: #fff;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎧 Audio Reality Layer - Debug Dashboard</h1>
+            <p>Test POI Chat endpoints with AI-powered audio guide</p>
+        </div>
+
+        <!-- Configuration -->
+        <div class="config-section">
+            <h3>Backend Configuration</h3>
+            <div class="form-group">
+                <label>Backend API URL</label>
+                <input type="text" id="apiUrl" value="https://cityspin-intelligence-service-production.up.railway.app" placeholder="https://your-api-url.com">
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-value" id="totalRequests">0</div>
+                <div class="stat-label">Total Requests</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="successCount">0</div>
+                <div class="stat-label">Successful</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="errorCount">0</div>
+                <div class="stat-label">Errors</div>
+            </div>
+        </div>
+
+        <!-- API Endpoints -->
+        <div class="grid">
+            <!-- POI Chat Endpoint -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🎙️</span>
+                    <div>
+                        <div class="card-title">POI Chat (Generate Audio)</div>
+                        <span class="badge badge-post">POST</span>
+                    </div>
+                </div>
+                
+                <div class="quick-fill" onclick="fillPOIEiffelTower()">📌 Eiffel Tower POI</div>
+                <div class="quick-fill" onclick="fillPOIParis()">📌 Paris POI</div>
+                <div class="quick-fill" onclick="fillPOIPrague()">📌 Prague POI</div>
+                <div class="quick-fill" onclick="fillPOIBrussels()">📌 Brussels POI</div>
+
+                <div class="form-group">
+                    <label>User ID (Header)</label>
+                    <input type="text" id="poi_chat_userId" value="user1">
+                </div>
+
+                <div class="form-group">
+                    <label>User Email (Header)</label>
+                    <input type="email" id="poi_chat_email" value="r@gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Latitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="poi_chat_lat" placeholder="e.g., 48.864716" value="48.858093">
+                </div>
+
+                <div class="form-group">
+                    <label>Longitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="poi_chat_lon" placeholder="e.g., 2.349014" value="2.294694">
+                </div>
+
+                <div class="form-group">
+                    <label>Speed (meters per second)</label>
+                    <input type="number" step="0.1" id="poi_chat_speed" placeholder="e.g., 5" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>Heading (degrees, 0-360)</label>
+                    <input type="number" step="1" id="poi_chat_heading" placeholder="e.g., 0" value="0">
+                </div>
+
+                <button onclick="chatPOI()">🎵 Generate POI Audio</button>
+                <div class="response-area" id="poi_chat_response">Response will appear here...</div>
+
+                <div class="audio-section" id="poi_chat_audio_section" style="display:none;">
+                    <h4>🎙️ Generated POI Audio (Auto-playing...)</h4>
+                    <div class="script-display" id="poi_chat_script"></div>
+                    <audio id="poi_chat_audio_player" class="audio-player" controls autoplay></audio>
+                </div>
+            </div>
+
+            <!-- POI Chat Open Endpoint -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">💬</span>
+                    <div>
+                        <div class="card-title">POI Chat Open (Custom Text)</div>
+                        <span class="badge badge-post">POST</span>
+                    </div>
+                </div>
+
+                <div class="quick-fill" onclick="fillPOIOpenEiffelTower()">📌 Eiffel Tower POI</div>
+                <div class="quick-fill" onclick="fillPOIOpenParis()">📌 Paris POI</div>
+                <div class="quick-fill" onclick="fillPOIOpenPrague()">📌 Prague POI</div>
+                <div class="quick-fill" onclick="fillPOIOpenBrussels()">📌 Brussels POI</div>
+
+                <div class="form-group">
+                    <label>User ID (Header)</label>
+                    <input type="text" id="poi_open_userId" value="user1">
+                </div>
+
+                <div class="form-group">
+                    <label>User Email (Header)</label>
+                    <input type="email" id="poi_open_email" value="r@gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Latitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="poi_open_lat" placeholder="e.g., 48.864716" value="48.858093">
+                </div>
+
+                <div class="form-group">
+                    <label>Longitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="poi_open_lon" placeholder="e.g., 2.349014" value="2.294694">
+                </div>
+
+                <div class="form-group">
+                    <label>Speed (meters per second)</label>
+                    <input type="number" step="0.1" id="poi_open_speed" placeholder="e.g., 5" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>Heading (degrees, 0-360)</label>
+                    <input type="number" step="1" id="poi_open_heading" placeholder="e.g., 0" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>User Text (Custom Message) <span style="color: #f44336;">*</span></label>
+                    <textarea id="poi_open_text" placeholder="Type your custom text here... Can be a few words or multiple sentences." required></textarea>
+                </div>
+
+                <button onclick="chatPOIOpen()">🎵 Generate Custom Audio</button>
+                <div class="response-area" id="poi_open_response">Response will appear here...</div>
+
+                <div class="audio-section" id="poi_open_audio_section" style="display:none;">
+                    <h4>🎙️ Generated Custom Audio (Auto-playing...)</h4>
+                    <div class="script-display" id="poi_open_script"></div>
+                    <audio id="poi_open_audio_player" class="audio-player" controls autoplay></audio>
+                </div>
+            </div>
+
+            <!-- Prepare Open Endpoint (New) -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🆕</span>
+                    <div>
+                        <div class="card-title">Prepare Open (New)</div>
+                        <span class="badge badge-post">POST</span>
+                    </div>
+                </div>
+
+                <div class="quick-fill" onclick="fillPrepareOpenEiffelTower()">📌 Eiffel Tower POI</div>
+                <div class="quick-fill" onclick="fillPrepareOpenParis()">📌 Paris POI</div>
+                <div class="quick-fill" onclick="fillPrepareOpenPrague()">📌 Prague POI</div>
+                <div class="quick-fill" onclick="fillPrepareOpenBrussels()">📌 Brussels POI</div>
+
+                <div class="form-group">
+                    <label>User ID (Header)</label>
+                    <input type="text" id="prepare_open_userId" value="user1">
+                </div>
+
+                <div class="form-group">
+                    <label>User Email (Header)</label>
+                    <input type="email" id="prepare_open_email" value="r@gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Latitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="prepare_open_lat" value="48.858093">
+                </div>
+
+                <div class="form-group">
+                    <label>Longitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="prepare_open_lon" value="2.294694">
+                </div>
+
+                <div class="form-group">
+                    <label>Speed (meters per second)</label>
+                    <input type="number" step="0.1" id="prepare_open_speed" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>Heading (degrees, 0-360)</label>
+                    <input type="number" step="1" id="prepare_open_heading" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>POI ID <span style="color: #f44336;">*</span></label>
+                    <input type="text" id="prepare_open_poi_id" placeholder="Enter POI UUID/string ID" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Open Text <span style="color: #f44336;">*</span></label>
+                    <textarea id="prepare_open_text" placeholder="Type custom open text for prepare/open..." required></textarea>
+                </div>
+
+                <button onclick="prepareOpenOnly()">📝 Prepare Script</button>
+                <div class="response-area" id="prepare_open_response">Response will appear here...</div>
+            </div>
+
+            <!-- Test POI Audio Endpoint (New) -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🔊</span>
+                    <div>
+                        <div class="card-title">Test POI Audio (New)</div>
+                        <span class="badge badge-get">GET</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>User ID (Header)</label>
+                    <input type="text" id="prepare_audio_userId" value="user1">
+                </div>
+
+                <div class="form-group">
+                    <label>User Email (Header)</label>
+                    <input type="email" id="prepare_audio_email" value="r@gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Script ID <span style="color: #f44336;">*</span></label>
+                    <input type="text" id="prepare_audio_script_id" placeholder="Paste script_id from prepare/open response">
+                </div>
+
+                <button onclick="fetchPoiAudioOnly()">🎧 Fetch Audio</button>
+                <div class="response-area" id="prepare_audio_response">Response will appear here...</div>
+
+                <div class="audio-section" id="prepare_audio_section" style="display:none;">
+                    <h4>🎙️ Test POI Audio</h4>
+                    <audio id="prepare_audio_player" class="audio-player" controls autoplay></audio>
+                </div>
+            </div>
+
+
+            <!-- POI Chat Open Multipart Endpoint -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🎭</span>
+                    <div>
+                        <div class="card-title">POI Open (Multipart)</div>
+                        <span class="badge badge-post">POST</span>
+                    </div>
+                </div>
+
+                <div class="quick-fill" onclick="fillPOIMultiEiffelTower()">📌 Eiffel Tower POI</div>
+                <div class="quick-fill" onclick="fillPOIMultiParis()">📌 Paris POI</div>
+                <div class="quick-fill" onclick="fillPOIMultiPrague()">📌 Prague POI</div>
+                <div class="quick-fill" onclick="fillPOIMultiBrussels()">📌 Brussels POI</div>
+
+                <div class="form-group">
+                    <label>User ID (Header)</label>
+                    <input type="text" id="poi_multi_userId" value="user1">
+                </div>
+
+                <div class="form-group">
+                    <label>User Email (Header)</label>
+                    <input type="email" id="poi_multi_email" value="r@gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Latitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="poi_multi_lat" placeholder="e.g., 48.864716" value="48.858093">
+                </div>
+
+                <div class="form-group">
+                    <label>Longitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="poi_multi_lon" placeholder="e.g., 2.349014" value="2.294694">
+                </div>
+
+                <div class="form-group">
+                    <label>Speed (meters per second)</label>
+                    <input type="number" step="0.1" id="poi_multi_speed" placeholder="e.g., 5" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>Heading (degrees, 0-360)</label>
+                    <input type="number" step="1" id="poi_multi_heading" placeholder="e.g., 0" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>User Text (Custom Message) <span style="color: #f44336;">*</span></label>
+                    <textarea id="poi_multi_text" placeholder="Type your custom text here... Can be a few words or multiple sentences." required></textarea>
+                </div>
+
+                <button onclick="chatPOIMultipart()">🎭 Generate Multipart Audio</button>
+                <div class="response-area" id="poi_multi_response">Response will appear here...</div>
+
+                <div class="audio-section" id="poi_multi_audio_section" style="display:none;">
+                    <h4>📊 Metadata</h4>
+                    <div class="script-display" id="poi_multi_metadata"></div>
+                    <h4 style="margin-top: 15px;">🎙️ Audio (Auto-playing...)</h4>
+                    <audio id="poi_multi_audio_player" class="audio-player" controls autoplay></audio>
+                </div>
+            </div>
+
+            <!-- Health Check -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">❤️</span>
+                    <div>
+                        <div class="card-title">Health Check</div>
+                        <span class="badge badge-get">GET</span>
+                    </div>
+                </div>
+
+                <p style="color: #666; margin-bottom: 15px;">Check if the backend API is running and healthy.</p>
+
+                <button onclick="healthCheck()">🏥 Check Health</button>
+                <div class="response-area" id="health_response">Response will appear here...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Functions -->
+    <script>
+        let totalRequests = 0;
+        let successCount = 0;
+        let errorCount = 0;
+
+        function updateStats() {
+            document.getElementById('totalRequests').textContent = totalRequests;
+            document.getElementById('successCount').textContent = successCount;
+            document.getElementById('errorCount').textContent = errorCount;
+        }
+
+        function getTimingClass(duration) {
+            if (duration > 10000) return 'very-slow';  // >10s
+            if (duration > 3000) return 'slow';         // >3s
+            return '';                                  // <3s
+        }
+
+        function getApiUrl() {
+            return document.getElementById('apiUrl').value.replace(/\/$/, '');
+        }
+
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '<div class="loading"></div> Loading...';
+            element.className = 'response-area';
+        }
+
+        function showResponse(elementId, data, isError = false, duration = null) {
+            const element = document.getElementById(elementId);
+            
+            let content = '';
+            
+            // Add response content first
+            content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            
+            // Add timing footer if duration provided
+            if (duration !== null) {
+                const timingClass = getTimingClass(duration);
+                content += `<div class="response-header" style="margin-top: 10px; margin-bottom: 0; padding-top: 8px; padding-bottom: 0; border-top: 1px solid #e0e0e0; border-bottom: none;">`;
+                content += `<span>Response Time:</span>`;
+                content += `<span class="timing-badge ${timingClass}">⏱️ ${Math.round(duration)}ms</span>`;
+                content += `</div>`;
+            }
+            console.log(`⏱️ ${Math.round(duration)}ms`);
+            
+            element.innerHTML = content;
+            element.className = isError ? 'response-area response-error' : 'response-area response-success';
+        }
+
+        // Quick fill POI locations (original endpoint)
+
+        function fillPOIEiffelTower() {
+            document.getElementById('poi_chat_lat').value = '48.858093';
+            document.getElementById('poi_chat_lon').value = '2.294694';
+        }
+
+        function fillPOIParis() {
+            document.getElementById('poi_chat_lat').value = '48.864716';
+            document.getElementById('poi_chat_lon').value = '2.349014';
+        }
+
+        function fillPOIPrague() {
+            document.getElementById('poi_chat_lat').value = '50.073658';
+            document.getElementById('poi_chat_lon').value = '14.418540';
+        }
+
+        function fillPOIBrussels() {
+            document.getElementById('poi_chat_lat').value = '50.847767';
+            document.getElementById('poi_chat_lon').value = '4.349394';
+        }
+
+        // Quick fill POI locations (open endpoint)
+        function fillPOIOpenEiffelTower() {
+            document.getElementById('poi_open_lat').value = '48.858093';
+            document.getElementById('poi_open_lon').value = '2.294694';
+        }
+
+        function fillPOIOpenParis() {
+            document.getElementById('poi_open_lat').value = '48.864716';
+            document.getElementById('poi_open_lon').value = '2.349014';
+        }
+
+        function fillPOIOpenPrague() {
+            document.getElementById('poi_open_lat').value = '50.073658';
+            document.getElementById('poi_open_lon').value = '14.418540';
+        }
+
+        function fillPOIOpenBrussels() {
+            document.getElementById('poi_open_lat').value = '50.847767';
+            document.getElementById('poi_open_lon').value = '4.349394';
+        }
+
+        // Quick fill POI locations (new prepare/open + test/poi endpoints)
+        function fillPrepareOpenEiffelTower() {
+            document.getElementById('prepare_open_lat').value = '48.858093';
+            document.getElementById('prepare_open_lon').value = '2.294694';
+            document.getElementById('prepare_open_poi_id').value = '16';
+        }
+
+        function fillPrepareOpenParis() {
+            document.getElementById('prepare_open_lat').value = '48.864716';
+            document.getElementById('prepare_open_lon').value = '2.349014';
+            document.getElementById('prepare_open_poi_id').value = '17';
+        }
+
+        function fillPrepareOpenPrague() {
+            document.getElementById('prepare_open_lat').value = '50.073658';
+            document.getElementById('prepare_open_lon').value = '14.418540';
+            document.getElementById('prepare_open_poi_id').value = '18';
+        }
+
+        function fillPrepareOpenBrussels() {
+            document.getElementById('prepare_open_lat').value = '50.847767';
+            document.getElementById('prepare_open_lon').value = '4.349394';
+            document.getElementById('prepare_open_poi_id').value = '19';
+        }
+
+        // Quick fill POI locations (multipart endpoint)
+        function fillPOIMultiEiffelTower() {
+            document.getElementById('poi_multi_lat').value = '48.858093';
+            document.getElementById('poi_multi_lon').value = '2.294694';
+        }
+
+        function fillPOIMultiParis() {
+            document.getElementById('poi_multi_lat').value = '48.864716';
+            document.getElementById('poi_multi_lon').value = '2.349014';
+        }
+
+        function fillPOIMultiPrague() {
+            document.getElementById('poi_multi_lat').value = '50.073658';
+            document.getElementById('poi_multi_lon').value = '14.418540';
+        }
+
+        function fillPOIMultiBrussels() {
+            document.getElementById('poi_multi_lat').value = '50.847767';
+            document.getElementById('poi_multi_lon').value = '4.349394';
+        }
+
+        // POI Chat Endpoint
+        async function chatPOI() {
+            showLoading('poi_chat_response');
+            totalRequests++;
+            updateStats();
+
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch(`${getApiUrl()}/api/v1/chat/poi`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-Id': document.getElementById('poi_chat_userId').value,
+                        'X-User-Email': document.getElementById('poi_chat_email').value,
+                        'X-User-Email-Verified': 'true'
+                    },
+                    body: JSON.stringify({
+                        event: "POI_EVENT",
+                        latitude: parseFloat(document.getElementById('poi_chat_lat').value),
+                        longitude: parseFloat(document.getElementById('poi_chat_lon').value),
+                        speed_mps: parseFloat(document.getElementById('poi_chat_speed').value),
+                        heading_deg: parseFloat(document.getElementById('poi_chat_heading').value)
+                    })
+                });
+
+                const data = await response.json();
+
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+
+                if (response.ok) {
+                    successCount++;
+                    showResponse('poi_chat_response', data, false, duration);
+
+                    // Display audio section with script
+                    document.getElementById('poi_chat_audio_section').style.display = 'block';
+                    document.getElementById('poi_chat_script').textContent = data.content.script;
+                    
+                    // Set audio URL and auto-play
+                    const audioPlayer = document.getElementById('poi_chat_audio_player');
+                    audioPlayer.src = data.content.audio_url;
+                    
+                    // Auto-play the audio
+                    audioPlayer.play().catch(error => {
+                        console.log('Auto-play failed (browser policy):', error);
+                        showResponse('poi_chat_response', {
+                            ...data,
+                            note: 'Audio ready! Click play if it didn\'t auto-start.'
+                        }, false, duration);
+                    });
+                } else {
+                    errorCount++;
+                    showResponse('poi_chat_response', data, true, duration);
+                }
+            } catch (error) {
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+                errorCount++;
+                showResponse('poi_chat_response', { error: error.message }, true, duration);
+            }
+            updateStats();
+        }
+
+        // POI Chat Open Endpoint
+        async function chatPOIOpen() {
+            // Validate that user_text is not empty
+            const userText = document.getElementById('poi_open_text').value.trim();
+            if (!userText) {
+                showResponse('poi_open_response', { 
+                    error: 'User text is required. Please enter your custom message.' 
+                }, true);
+                return;
+            }
+
+            showLoading('poi_open_response');
+            totalRequests++;
+            updateStats();
+
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch(`${getApiUrl()}/api/v1/chat/poi/open`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-Id': document.getElementById('poi_open_userId').value,
+                        'X-User-Email': document.getElementById('poi_open_email').value,
+                        'X-User-Email-Verified': 'true'
+                    },
+                    body: JSON.stringify({
+                        event: "POI_EVENT",
+                        latitude: parseFloat(document.getElementById('poi_open_lat').value),
+                        longitude: parseFloat(document.getElementById('poi_open_lon').value),
+                        speed_mps: parseFloat(document.getElementById('poi_open_speed').value),
+                        heading_deg: parseFloat(document.getElementById('poi_open_heading').value),
+                        user_text: userText
+                    })
+                });
+
+                const data = await response.json();
+
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+
+                if (response.ok) {
+                    successCount++;
+                    showResponse('poi_open_response', data, false, duration);
+
+                    // Display audio section with script
+                    document.getElementById('poi_open_audio_section').style.display = 'block';
+                    document.getElementById('poi_open_script').textContent = data.content.script;
+                    
+                    // Set audio URL and auto-play
+                    const audioPlayer = document.getElementById('poi_open_audio_player');
+                    audioPlayer.src = data.content.audio_url;
+                    
+                    // Auto-play the audio
+                    audioPlayer.play().catch(error => {
+                        console.log('Auto-play failed (browser policy):', error);
+                        showResponse('poi_open_response', {
+                            ...data,
+                            note: 'Audio ready! Click play if it didn\'t auto-start.'
+                        }, false, duration);
+                    });
+                } else {
+                    errorCount++;
+                    showResponse('poi_open_response', data, true, duration);
+                }
+            } catch (error) {
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+                errorCount++;
+                showResponse('poi_open_response', { error: error.message }, true, duration);
+            }
+            updateStats();
+        }
+
+        async function prepareOpenOnly() {
+            const openText = document.getElementById('prepare_open_text').value.trim();
+            const poiId = document.getElementById('prepare_open_poi_id').value.trim();
+            if (!openText) {
+                showResponse('prepare_open_response', { error: 'Open text is required.' }, true);
+                return;
+            }
+            if (!poiId) {
+                showResponse('prepare_open_response', { error: 'POI ID is required.' }, true);
+                return;
+            }
+
+            showLoading('prepare_open_response');
+            totalRequests++;
+            updateStats();
+            const startTime = performance.now();
+
+            try {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'X-User-Id': document.getElementById('prepare_open_userId').value,
+                    'X-User-Email': document.getElementById('prepare_open_email').value,
+                    'X-User-Email-Verified': 'false'
+                };
+
+                const prepareResponse = await fetch(`${getApiUrl()}/api/v1/test/poi/prepare/open`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        latitude: parseFloat(document.getElementById('prepare_open_lat').value),
+                        longitude: parseFloat(document.getElementById('prepare_open_lon').value),
+                        speed_mps: parseFloat(document.getElementById('prepare_open_speed').value),
+                        heading_deg: parseFloat(document.getElementById('prepare_open_heading').value),
+                        poi_id: poiId,
+                        open_text: openText
+                    })
+                });
+
+                const prepareData = await prepareResponse.json();
+                const duration = performance.now() - startTime;
+                if (!prepareResponse.ok) {
+                    errorCount++;
+                    showResponse('prepare_open_response', prepareData, true, duration);
+                    updateStats();
+                    return;
+                }
+
+                if (!prepareData.script_id) {
+                    throw new Error('prepare/open did not return script_id');
+                }
+
+                successCount++;
+                showResponse('prepare_open_response', prepareData, false, duration);
+                document.getElementById('prepare_audio_script_id').value = prepareData.script_id;
+            } catch (error) {
+                const duration = performance.now() - startTime;
+                errorCount++;
+                showResponse('prepare_open_response', { error: error.message }, true, duration);
+            }
+            updateStats();
+        }
+
+        async function fetchPoiAudioOnly() {
+            const scriptId = document.getElementById('prepare_audio_script_id').value.trim();
+            if (!scriptId) {
+                showResponse('prepare_audio_response', { error: 'Script ID is required.' }, true);
+                return;
+            }
+
+            showLoading('prepare_audio_response');
+            totalRequests++;
+            updateStats();
+            const startTime = performance.now();
+
+            try {
+                const headers = {
+                    'X-User-Id': document.getElementById('prepare_audio_userId').value,
+                    'X-User-Email': document.getElementById('prepare_audio_email').value,
+                    'X-User-Email-Verified': 'false'
+                };
+
+                const response = await fetch(`${getApiUrl()}/api/v1/audio/test/poi/${encodeURIComponent(scriptId)}`, {
+                    method: 'GET',
+                    headers
+                });
+
+                const duration = performance.now() - startTime;
+                const contentType = response.headers.get('Content-Type') || '';
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    errorCount++;
+                    showResponse('prepare_audio_response', { error: errorText }, true, duration);
+                    updateStats();
+                    return;
+                }
+
+                if (contentType.includes('audio/mpeg') || contentType.startsWith('audio/')) {
+                    const audioBlob = await response.blob();
+                    const audioPlayer = document.getElementById('prepare_audio_player');
+
+                    if (audioPlayer.dataset.objectUrl) {
+                        URL.revokeObjectURL(audioPlayer.dataset.objectUrl);
+                        delete audioPlayer.dataset.objectUrl;
+                    }
+
+                    const objectUrl = URL.createObjectURL(audioBlob);
+                    audioPlayer.src = objectUrl;
+                    audioPlayer.dataset.objectUrl = objectUrl;
+                    document.getElementById('prepare_audio_section').style.display = 'block';
+
+                    successCount++;
+                    showResponse('prepare_audio_response', {
+                        script_id: scriptId,
+                        status: 'audio_stream_ready'
+                    }, false, duration);
+
+                    audioPlayer.play().catch(error => {
+                        console.log('Auto-play failed (browser policy):', error);
+                    });
+                } else {
+                    const payload = await response.json();
+                    const status = (payload.status || '').toLowerCase();
+
+                    if (status === 'failed') {
+                        errorCount++;
+                        showResponse('prepare_audio_response', {
+                            ...payload,
+                            error: payload.message || 'Audio generation failed.'
+                        }, true, duration);
+                        updateStats();
+                        return;
+                    }
+
+                    if (status === 'completed') {
+                        if (!payload.audio_url) {
+                            errorCount++;
+                            showResponse('prepare_audio_response', {
+                                ...payload,
+                                error: 'Completed status returned without audio_url.'
+                            }, true, duration);
+                            updateStats();
+                            return;
+                        }
+
+                        const audioPlayer = document.getElementById('prepare_audio_player');
+                        if (audioPlayer.dataset.objectUrl) {
+                            URL.revokeObjectURL(audioPlayer.dataset.objectUrl);
+                            delete audioPlayer.dataset.objectUrl;
+                        }
+
+                        audioPlayer.src = payload.audio_url;
+                        document.getElementById('prepare_audio_section').style.display = 'block';
+                        audioPlayer.play().catch(error => {
+                            console.log('Auto-play failed (browser policy):', error);
+                        });
+                    }
+
+                    successCount++;
+                    showResponse('prepare_audio_response', payload, false, duration);
+                }
+            } catch (error) {
+                const duration = performance.now() - startTime;
+                errorCount++;
+                showResponse('prepare_audio_response', { error: error.message }, true, duration);
+            }
+
+            updateStats();
+        }
+
+
+        // Parse multipart/mixed response
+        function parseMultipartResponse(arrayBuffer, boundary) {
+            const decoder = new TextDecoder('utf-8');
+            const text = decoder.decode(arrayBuffer);
+            
+            // Split by boundary
+            const parts = text.split(`--${boundary}`);
+            
+            let jsonData = null;
+            let audioBlob = null;
+            
+            for (let part of parts) {
+                if (part.includes('Content-Type: application/json')) {
+                    // Extract JSON
+                    const jsonMatch = part.match(/\r?\n\r?\n([\s\S]+?)(\r?\n|$)/);
+                    if (jsonMatch) {
+                        try {
+                            jsonData = JSON.parse(jsonMatch[1].trim());
+                        } catch (e) {
+                            console.error('Failed to parse JSON:', e);
+                        }
+                    }
+                } else if (part.includes('Content-Type: audio/mpeg')) {
+                    // Extract audio bytes
+                    const audioStart = part.indexOf('\r\n\r\n') + 4;
+                    if (audioStart > 3) {
+                        // Convert the text representation back to binary
+                        const audioText = part.substring(audioStart);
+                        // We need to get the raw bytes, so we'll need to re-parse from the original buffer
+                    }
+                }
+            }
+            
+            // Re-parse for audio using binary approach
+            const uint8Array = new Uint8Array(arrayBuffer);
+            const boundaryBytes = new TextEncoder().encode(`--${boundary}\r\n`);
+            
+            // Find audio part
+            let audioStartIdx = -1;
+            const audioMarker = new TextEncoder().encode('Content-Type: audio/mpeg');
+            
+            for (let i = 0; i < uint8Array.length - audioMarker.length; i++) {
+                let match = true;
+                for (let j = 0; j < audioMarker.length; j++) {
+                    if (uint8Array[i + j] !== audioMarker[j]) {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match) {
+                    // Find the \r\n\r\n after Content-Type header
+                    for (let k = i; k < uint8Array.length - 4; k++) {
+                        if (uint8Array[k] === 13 && uint8Array[k+1] === 10 && 
+                            uint8Array[k+2] === 13 && uint8Array[k+3] === 10) {
+                            audioStartIdx = k + 4;
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+            
+            if (audioStartIdx > -1) {
+                // Find the end boundary
+                const endBoundary = new TextEncoder().encode(`\r\n--${boundary}`);
+                let audioEndIdx = uint8Array.length;
+                
+                for (let i = audioStartIdx; i < uint8Array.length - endBoundary.length; i++) {
+                    let match = true;
+                    for (let j = 0; j < endBoundary.length; j++) {
+                        if (uint8Array[i + j] !== endBoundary[j]) {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match) {
+                        audioEndIdx = i;
+                        break;
+                    }
+                }
+                
+                const audioBytes = uint8Array.slice(audioStartIdx, audioEndIdx);
+                audioBlob = new Blob([audioBytes], { type: 'audio/mpeg' });
+            }
+            
+            return { jsonData, audioBlob };
+        }
+
+        // POI Chat Open Multipart Endpoint
+        async function chatPOIMultipart() {
+            // Validate that user_text is not empty
+            const userText = document.getElementById('poi_multi_text').value.trim();
+            if (!userText) {
+                showResponse('poi_multi_response', { 
+                    error: 'User text is required. Please enter your custom message.' 
+                }, true);
+                return;
+            }
+
+            showLoading('poi_multi_response');
+            totalRequests++;
+            updateStats();
+
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch(`${getApiUrl()}/api/v1/chat/poi/open-new`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-Id': document.getElementById('poi_multi_userId').value,
+                        'X-User-Email': document.getElementById('poi_multi_email').value,
+                        'X-User-Email-Verified': 'true'
+                    },
+                    body: JSON.stringify({
+                        event: "POI_EVENT",
+                        latitude: parseFloat(document.getElementById('poi_multi_lat').value),
+                        longitude: parseFloat(document.getElementById('poi_multi_lon').value),
+                        speed_mps: parseFloat(document.getElementById('poi_multi_speed').value),
+                        heading_deg: parseFloat(document.getElementById('poi_multi_heading').value),
+                        user_text: userText
+                    })
+                });
+
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+
+                if (response.ok) {
+                    // Get the boundary from Content-Type header
+                    const contentType = response.headers.get('Content-Type');
+                    const boundaryMatch = contentType.match(/boundary=([^;]+)/);
+                    
+                    if (!boundaryMatch) {
+                        throw new Error('No boundary found in multipart response');
+                    }
+                    
+                    const boundary = boundaryMatch[1];
+                    
+                    // Get response as ArrayBuffer
+                    const arrayBuffer = await response.arrayBuffer();
+                    
+                    // Parse multipart response
+                    const { jsonData, audioBlob } = parseMultipartResponse(arrayBuffer, boundary);
+                    
+                    if (!jsonData || !audioBlob) {
+                        throw new Error('Failed to parse multipart response');
+                    }
+                    
+                    successCount++;
+                    showResponse('poi_multi_response', { 
+                        status: 'success',
+                        message: 'Multipart response parsed successfully',
+                        metadata: jsonData
+                    }, false, duration);
+
+                    // Display audio section with metadata
+                    document.getElementById('poi_multi_audio_section').style.display = 'block';
+                    document.getElementById('poi_multi_metadata').textContent = JSON.stringify(jsonData, null, 2);
+                    
+                    // Set audio URL from blob and auto-play
+                    const audioPlayer = document.getElementById('poi_multi_audio_player');
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    audioPlayer.src = audioUrl;
+                    
+                    // Auto-play the audio
+                    audioPlayer.play().catch(error => {
+                        console.log('Auto-play failed (browser policy):', error);
+                        showResponse('poi_multi_response', {
+                            status: 'success',
+                            message: 'Audio ready! Click play if it didn\'t auto-start.',
+                            metadata: jsonData
+                        }, false, duration);
+                    });
+                } else {
+                    errorCount++;
+                    const errorText = await response.text();
+                    showResponse('poi_multi_response', { error: errorText }, true, duration);
+                }
+            } catch (error) {
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+                errorCount++;
+                showResponse('poi_multi_response', { error: error.message }, true, duration);
+            }
+            updateStats();
+        }
+
+        // Health Check
+        async function healthCheck() {
+            showLoading('health_response');
+            totalRequests++;
+            updateStats();
+
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch(`${getApiUrl()}/api/v1/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+
+                if (response.ok) {
+                    successCount++;
+                    showResponse('health_response', data, false, duration);
+                } else {
+                    errorCount++;
+                    showResponse('health_response', data, true, duration);
+                }
+            } catch (error) {
+                errorCount++;
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+                showResponse('health_response', { error: error.message }, true, duration);
+            }
+            updateStats();
+        }
+
+        // Auto health check on load
+        window.addEventListener('load', () => {
+            setTimeout(healthCheck, 500);
+        });
+    </script>
+</body>
+</html>

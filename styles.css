@@ -1,0 +1,411 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.header {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    color: #667eea;
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.header p {
+    color: #666;
+    font-size: 16px;
+}
+
+.config-section {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.config-section h3 {
+    color: #333;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.config-section h3::before {
+    content: "⚙️";
+    font-size: 20px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.card-icon {
+    font-size: 28px;
+}
+
+.card-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    color: #555;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+}
+
+button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-top: 10px;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.response-area {
+    background: #f8f9fa;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+    min-height: 120px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.response-success {
+    border-color: #4caf50;
+    background: #f1f8f4;
+}
+
+.response-error {
+    border-color: #f44336;
+    background: #fef1f0;
+    color: #c62828;
+}
+
+.loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+.badge-get {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.badge-post {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.stat-box {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.audio-player {
+    margin-top: 15px;
+    width: 100%;
+}
+
+.quick-fill {
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-block;
+    margin: 5px 5px 5px 0;
+    transition: background 0.2s;
+}
+
+.quick-fill:hover {
+    background: #bbdefb;
+}
+
+.audio-section {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f0f4ff;
+    border-radius: 8px;
+    border: 2px dashed #667eea;
+}
+
+.audio-section h4 {
+    color: #667eea;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+/* ── Cascading Voice Picker ────────────────────────────────── */
+
+.voice-picker {
+    margin-top: 16px;
+    padding: 16px;
+    background: #f7f8ff;
+    border: 2px solid #c5caff;
+    border-radius: 12px;
+}
+
+.voice-picker-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: #667eea;
+    margin-bottom: 14px;
+    letter-spacing: 0.3px;
+}
+
+.vp-step {
+    margin-bottom: 12px;
+}
+
+.vp-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.vp-row {
+    display: flex;
+    gap: 12px;
+}
+
+.vp-half {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Pills for voice type & gender */
+.vp-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.vp-pill {
+    padding: 6px 12px;
+    border: 2px solid #ddd;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    color: #555;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.vp-pill:hover {
+    border-color: #667eea;
+    color: #667eea;
+    background: #f0f4ff;
+}
+
+.vp-pill.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-color: transparent;
+    color: white;
+}
+
+.vp-pill.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Type pill descriptions shown as tooltip-style sub-text */
+.vp-pill-desc {
+    display: block;
+    font-size: 10px;
+    font-weight: 400;
+    opacity: 0.8;
+    margin-top: 1px;
+}
+
+/* Final voice name select */
+#vp_voice {
+    background: white;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+/* Selected badge */
+.vp-selected {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #667eea15, #764ba215);
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vp-selected-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #667eea;
+    white-space: nowrap;
+}
+
+.vp-selected-value {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #333;
+    word-break: break-all;
+}
+
+
+    /* background: #fff;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+} */

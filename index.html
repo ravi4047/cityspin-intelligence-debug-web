@@ -383,6 +383,75 @@
                 </div>
             </div>
 
+
+            <!-- Google POI Stream -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">📡</span>
+                    <div>
+                        <div class="card-title">Google POI Open (Stream)</div>
+                        <span class="badge badge-post">POST</span>
+                    </div>
+                </div>
+
+                <div class="quick-fill" onclick="fillStreamEiffelTower()">📌 Eiffel Tower</div>
+                <div class="quick-fill" onclick="fillStreamParis()">📌 Paris</div>
+                <div class="quick-fill" onclick="fillStreamPrague()">📌 Prague</div>
+                <div class="quick-fill" onclick="fillStreamBrussels()">📌 Brussels</div>
+
+                <div class="form-group">
+                    <label>User ID (Header)</label>
+                    <input type="text" id="stream_userId" value="user1">
+                </div>
+                <div class="form-group">
+                    <label>User Email (Header)</label>
+                    <input type="email" id="stream_email" value="r@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label>Latitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="stream_lat" value="48.858093">
+                </div>
+                <div class="form-group">
+                    <label>Longitude (decimal degrees)</label>
+                    <input type="number" step="0.000001" id="stream_lon" value="2.294694">
+                </div>
+                <div class="form-group">
+                    <label>Speed (meters per second)</label>
+                    <input type="number" step="0.1" id="stream_speed" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Heading (degrees, 0-360)</label>
+                    <input type="number" step="1" id="stream_heading" value="0">
+                </div>
+                <div class="form-group">
+                    <label>POI ID <span style="color:#f44336;">*</span></label>
+                    <input type="text" id="stream_poi_id" placeholder="Enter POI UUID/string ID">
+                </div>
+                <div class="form-group">
+                    <label>Open Text <span style="color:#f44336;">*</span></label>
+                    <textarea id="stream_open_text" placeholder="Type your open text here..."></textarea>
+                </div>
+
+                <!-- Stream progress bar -->
+                <div class="stream-progress-wrap" id="stream_progress_wrap" style="display:none;">
+                    <div class="stream-progress-bar">
+                        <div class="stream-progress-fill" id="stream_progress_fill"></div>
+                    </div>
+                    <div class="stream-progress-info">
+                        <span id="stream_status_text">Connecting…</span>
+                        <span id="stream_bytes_text"></span>
+                    </div>
+                </div>
+
+                <button id="stream_btn" onclick="streamGooglePOI()">📡 Stream Audio</button>
+                <div class="response-area" id="stream_response">Response will appear here...</div>
+
+                <div class="audio-section" id="stream_audio_section" style="display:none;">
+                    <h4>📡 Streamed Audio (Auto-playing...)</h4>
+                    <audio id="stream_audio_player" class="audio-player" controls></audio>
+                </div>
+            </div>
+
             <!-- Health Check -->
             <div class="card">
                 <div class="card-header">

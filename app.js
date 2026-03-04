@@ -705,7 +705,174 @@ async function chatGooglePOIOpen() {
     updateStats();
 }
 
+// ─── Quick-fill: Stream ───────────────────────────────────────────────────────
 
+function fillGoogleStreamEiffelTower() {
+    setCoords('stream', LOCATIONS.eiffelTower);
+    document.getElementById('stream_poi_id').value = PREPARE_POI_IDS.eiffelTower;
+}
+function fillGoogleStreamParis() {
+    setCoords('stream', LOCATIONS.paris);
+    document.getElementById('stream_poi_id').value = PREPARE_POI_IDS.paris;
+}
+function fillGoogleStreamPrague() {
+    setCoords('stream', LOCATIONS.prague);
+    document.getElementById('stream_poi_id').value = PREPARE_POI_IDS.prague;
+}
+function fillGoogleStreamBrussels() {
+    setCoords('stream', LOCATIONS.brussels);
+    document.getElementById('stream_poi_id').value = PREPARE_POI_IDS.brussels;
+}
+
+// ─── API: Google POI Open Stream ──────────────────────────────────────────────
+
+async function streamGooglePOI() {
+    const openText = document.getElementById('stream_open_text').value.trim();
+    const poiId    = document.getElementById('stream_poi_id').value.trim();
+
+    if (!openText) { showResponse('stream_response', { error: 'Open text is required.' }, true); return; }
+    if (!poiId)    { showResponse('stream_response', { error: 'POI ID is required.' }, true); return; }
+
+    // UI reset
+    const btn         = document.getElementById('stream_btn');
+    const progressWrap = document.getElementById('stream_progress_wrap');
+    const progressFill = document.getElementById('stream_progress_fill');
+    const statusText  = document.getElementById('stream_status_text');
+    const bytesText   = document.getElementById('stream_bytes_text');
+    const audioSection = document.getElementById('stream_audio_section');
+    const audioPlayer  = document.getElementById('stream_audio_player');
+
+    // Revoke any previous blob URL
+    if (audioPlayer.dataset.objectUrl) {
+        URL.revokeObjectURL(audioPlayer.dataset.objectUrl);
+        delete audioPlayer.dataset.objectUrl;
+    }
+
+    audioSection.style.display = 'none';
+    audioPlayer.src = '';
+    progressFill.className = 'stream-progress-fill indeterminate';
+    progressFill.style.width = '';
+    statusText.textContent = 'Connecting…';
+    bytesText.textContent = '';
+    progressWrap.style.display = 'block';
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Streaming…';
+    showLoading('stream_response');
+    totalRequests++;
+    updateStats();
+
+    const startTime = performance.now();
+
+    try {
+        const response = await fetch(`${getApiUrl()}/api/v1/test/chat/google/poi/open/stream`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-User-Id':    document.getElementById('stream_userId').value,
+                'X-User-Email': document.getElementById('stream_email').value,
+                'X-User-Email-Verified': 'true',
+            },
+            body: JSON.stringify({
+                latitude:    parseFloat(document.getElementById('stream_lat').value),
+                longitude:   parseFloat(document.getElementById('stream_lon').value),
+                speed_mps:   parseFloat(document.getElementById('stream_speed').value),
+                heading_deg: parseFloat(document.getElementById('stream_heading').value),
+                poi_id:      poiId,
+                open_text:   openText,
+            })
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errText}`);
+        }
+
+        const contentType = response.headers.get('Content-Type') || '';
+        if (!contentType.includes('audio/')) {
+            throw new Error(`Unexpected Content-Type: "${contentType}" — expected audio/mpeg`);
+        }
+
+        // ── Read the stream chunk by chunk ──────────────────────────────────
+        statusText.textContent = 'Receiving stream…';
+        progressFill.className = 'stream-progress-fill';    // stop indeterminate
+
+        // Content-Length may not be set for a streaming response — handle both
+        const contentLength = parseInt(response.headers.get('Content-Length') || '0', 10);
+        const chunks = [];
+        let received = 0;
+
+        const reader = response.body.getReader();
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            chunks.push(value);
+            received += value.byteLength;
+
+            // Update progress bar
+            if (contentLength > 0) {
+                const pct = Math.min(100, Math.round((received / contentLength) * 100));
+                progressFill.style.width = pct + '%';
+                statusText.textContent = `Receiving… ${pct}%`;
+            } else {
+                // No Content-Length — grow bar proportionally up to 90% using log scale
+                const logPct = Math.min(90, Math.round(Math.log1p(received / 1024) * 12));
+                progressFill.style.width = logPct + '%';
+                statusText.textContent = 'Receiving stream…';
+            }
+
+            bytesText.textContent = formatBytes(received);
+        }
+
+        // All chunks received — merge into a single Blob
+        const blob = new Blob(chunks, { type: 'audio/mpeg' });
+        const duration = performance.now() - startTime;
+
+        // Snap progress bar to 100%
+        progressFill.style.width = '100%';
+        statusText.textContent = '✅ Complete';
+        bytesText.textContent = formatBytes(blob.size);
+
+        // Create object URL and autoplay
+        const objectUrl = URL.createObjectURL(blob);
+        audioPlayer.src = objectUrl;
+        audioPlayer.dataset.objectUrl = objectUrl;
+        audioSection.style.display = 'block';
+        audioPlayer.play().catch(err => console.log('Auto-play blocked:', err));
+
+        successCount++;
+        showResponse('stream_response', {
+            status: 'stream_complete',
+            bytes_received: blob.size,
+            content_type: contentType,
+            duration_ms: Math.round(duration),
+        }, false, duration);
+
+    } catch (error) {
+        const duration = performance.now() - startTime;
+        progressFill.className = 'stream-progress-fill';
+        progressFill.style.width = '100%';
+        progressFill.style.background = '#f44336';
+        statusText.textContent = '❌ Failed';
+        bytesText.textContent = '';
+        errorCount++;
+        showResponse('stream_response', { error: error.message }, true, duration);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '📡 Stream Audio';
+        updateStats();
+    }
+}
+
+function formatBytes(bytes) {
+    if (bytes < 1024)        return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 async function healthCheck() {
     showLoading('health_response');

@@ -726,6 +726,8 @@ function fillGoogleStreamBrussels() {
 
 // ─── API: Google POI Open Stream ──────────────────────────────────────────────
 
+// ─── API: Google POI Open Stream ──────────────────────────────────────────────
+
 async function streamGooglePOI() {
     const openText = document.getElementById('stream_open_text').value.trim();
     const poiId    = document.getElementById('stream_poi_id').value.trim();
@@ -733,27 +735,28 @@ async function streamGooglePOI() {
     if (!openText) { showResponse('stream_response', { error: 'Open text is required.' }, true); return; }
     if (!poiId)    { showResponse('stream_response', { error: 'POI ID is required.' }, true); return; }
 
-    // UI reset
-    const btn         = document.getElementById('stream_btn');
+    const btn          = document.getElementById('stream_btn');
     const progressWrap = document.getElementById('stream_progress_wrap');
     const progressFill = document.getElementById('stream_progress_fill');
-    const statusText  = document.getElementById('stream_status_text');
-    const bytesText   = document.getElementById('stream_bytes_text');
+    const statusText   = document.getElementById('stream_status_text');
+    const bytesText    = document.getElementById('stream_bytes_text');
     const audioSection = document.getElementById('stream_audio_section');
     const audioPlayer  = document.getElementById('stream_audio_player');
 
-    // Revoke any previous blob URL
+    // ── Tear down any previous MediaSource session ────────────────────────────
     if (audioPlayer.dataset.objectUrl) {
         URL.revokeObjectURL(audioPlayer.dataset.objectUrl);
         delete audioPlayer.dataset.objectUrl;
     }
-
-    audioSection.style.display = 'none';
     audioPlayer.src = '';
+    audioSection.style.display = 'none';
+
+    // Reset progress bar
     progressFill.className = 'stream-progress-fill indeterminate';
     progressFill.style.width = '';
+    progressFill.style.background = '';
     statusText.textContent = 'Connecting…';
-    bytesText.textContent = '';
+    bytesText.textContent  = '';
     progressWrap.style.display = 'block';
 
     btn.disabled = true;
@@ -784,83 +787,126 @@ async function streamGooglePOI() {
         });
 
         if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`HTTP ${response.status}: ${errText}`);
+            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
         }
 
         const contentType = response.headers.get('Content-Type') || '';
         if (!contentType.includes('audio/')) {
-            throw new Error(`Unexpected Content-Type: "${contentType}" — expected audio/mpeg`);
+            throw new Error(`Unexpected Content-Type: "${contentType}"`);
         }
 
-        // ── Read the stream chunk by chunk ──────────────────────────────────
-        statusText.textContent = 'Receiving stream…';
-        progressFill.className = 'stream-progress-fill';    // stop indeterminate
+        // ── Set up MediaSource for true streaming playback ────────────────────
+        // MSE lets us push chunks into the audio buffer as they arrive,
+        // so the audio starts playing before the full response is received.
+        const mime = 'audio/mpeg';
+        if (!MediaSource.isTypeSupported(mime)) {
+            throw new Error(`MediaSource does not support "${mime}" in this browser. Try Chrome or Edge.`);
+        }
 
-        // Content-Length may not be set for a streaming response — handle both
+        const mediaSource = new MediaSource();
+        const objectUrl   = URL.createObjectURL(mediaSource);
+        audioPlayer.src   = objectUrl;
+        audioPlayer.dataset.objectUrl = objectUrl;
+        audioSection.style.display = 'block';
+
+        // Wait for MediaSource to open before we can create a SourceBuffer
+        await new Promise((resolve, reject) => {
+            mediaSource.addEventListener('sourceopen', resolve, { once: true });
+            mediaSource.addEventListener('error',      reject,  { once: true });
+        });
+
+        const sourceBuffer = mediaSource.addSourceBuffer(mime);
+
+        // SourceBuffer is synchronous and can only accept one chunk at a time.
+        // We queue incoming chunks and drain the queue after each updateend.
+        const queue = [];
+        let   streamDone = false;
+        let   received   = 0;
         const contentLength = parseInt(response.headers.get('Content-Length') || '0', 10);
-        const chunks = [];
-        let received = 0;
+
+        function drainQueue() {
+            if (sourceBuffer.updating || queue.length === 0) return;
+            sourceBuffer.appendBuffer(queue.shift());
+        }
+
+        sourceBuffer.addEventListener('updateend', () => {
+            if (queue.length > 0) {
+                drainQueue();
+            } else if (streamDone && mediaSource.readyState === 'open') {
+                // All chunks have been flushed — signal end of stream
+                mediaSource.endOfStream();
+                progressFill.style.width  = '100%';
+                statusText.textContent    = '✅ Stream complete';
+            }
+        });
+
+        // ── Read the fetch ReadableStream chunk by chunk ──────────────────────
+        progressFill.className = 'stream-progress-fill';   // stop indeterminate pulse
+        statusText.textContent = 'Buffering…';
 
         const reader = response.body.getReader();
+        let firstChunk = true;
 
         while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
 
-            chunks.push(value);
+            if (done) {
+                streamDone = true;
+                // If the sourceBuffer is idle right now, end the stream immediately
+                if (!sourceBuffer.updating && queue.length === 0 && mediaSource.readyState === 'open') {
+                    mediaSource.endOfStream();
+                    progressFill.style.width = '100%';
+                    statusText.textContent   = '✅ Stream complete';
+                }
+                break;
+            }
+
             received += value.byteLength;
+            queue.push(value.buffer);
+            drainQueue();  // push to SourceBuffer if it's not busy
+
+            // Autoplay on first chunk so audio starts immediately
+            if (firstChunk) {
+                firstChunk = false;
+                statusText.textContent = '▶ Playing…';
+                audioPlayer.play().catch(err => console.log('Auto-play blocked:', err));
+            }
 
             // Update progress bar
             if (contentLength > 0) {
-                const pct = Math.min(100, Math.round((received / contentLength) * 100));
+                const pct = Math.min(99, Math.round((received / contentLength) * 100));
                 progressFill.style.width = pct + '%';
-                statusText.textContent = `Receiving… ${pct}%`;
+                statusText.textContent   = `▶ Playing… ${pct}%`;
             } else {
-                // No Content-Length — grow bar proportionally up to 90% using log scale
+                // No Content-Length (typical for StreamingResponse) — log-scale approximation
                 const logPct = Math.min(90, Math.round(Math.log1p(received / 1024) * 12));
                 progressFill.style.width = logPct + '%';
-                statusText.textContent = 'Receiving stream…';
             }
 
             bytesText.textContent = formatBytes(received);
         }
 
-        // All chunks received — merge into a single Blob
-        const blob = new Blob(chunks, { type: 'audio/mpeg' });
         const duration = performance.now() - startTime;
-
-        // Snap progress bar to 100%
-        progressFill.style.width = '100%';
-        statusText.textContent = '✅ Complete';
-        bytesText.textContent = formatBytes(blob.size);
-
-        // Create object URL and autoplay
-        const objectUrl = URL.createObjectURL(blob);
-        audioPlayer.src = objectUrl;
-        audioPlayer.dataset.objectUrl = objectUrl;
-        audioSection.style.display = 'block';
-        audioPlayer.play().catch(err => console.log('Auto-play blocked:', err));
-
         successCount++;
         showResponse('stream_response', {
-            status: 'stream_complete',
-            bytes_received: blob.size,
-            content_type: contentType,
-            duration_ms: Math.round(duration),
+            status:         'streaming',
+            note:           'Audio started playing on first chunk — did NOT wait for full download.',
+            bytes_received: received,
+            content_type:   contentType,
+            duration_ms:    Math.round(duration),
         }, false, duration);
 
     } catch (error) {
         const duration = performance.now() - startTime;
-        progressFill.className = 'stream-progress-fill';
-        progressFill.style.width = '100%';
+        progressFill.className    = 'stream-progress-fill';
+        progressFill.style.width  = '100%';
         progressFill.style.background = '#f44336';
-        statusText.textContent = '❌ Failed';
-        bytesText.textContent = '';
+        statusText.textContent    = '❌ Failed';
+        bytesText.textContent     = '';
         errorCount++;
         showResponse('stream_response', { error: error.message }, true, duration);
     } finally {
-        btn.disabled = false;
+        btn.disabled    = false;
         btn.textContent = '📡 Stream Audio';
         updateStats();
     }
